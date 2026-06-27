@@ -18,8 +18,17 @@ All changes start with intent, moving from high-level to low-level:
 - **Documentation is Truth**: Code is the "compiled" output of design. If they disagree, the documentation wins; fix the code or update the design and cascade the change.
 - **Intent Gaps > Bugs**: Most failures are misaligned intent. When a bug is found, "walk the arrow" from the top down to identify where the intent diverged.
 - **Traceability**: All code entry points and tests must carry `@spec [ID]` comments (e.g., `# @spec AUTH-001`).
+- **Diagram Maintenance**: Explanatory diagrams must stay aligned with the current HLD, LLD, and EARS documents. When a design or spec change invalidates an existing diagram, update the affected diagrams in the same change.
 
 ## Design Templates
+
+### Diagram Companion Docs (`docs/diagrams/*.md`)
+- **Purpose**: Provide concise visual companions for approved design/spec intent without replacing the normative HLD, LLD, or EARS sources.
+- **Requirements**:
+  - diagrams must live alongside a short text explanation of scope and notation
+  - each diagram doc must include lightweight traceability back to the HLD/LLD/spec sources it visualizes
+  - diagrams must not introduce behavior that is absent from the approved HLD/LLD/EARS chain
+  - when diagrams become stale because intent changed, update them as part of the same work
 
 ### HLD (`docs/high-level-design.md`)
 - **Goal**: Clear objective.
