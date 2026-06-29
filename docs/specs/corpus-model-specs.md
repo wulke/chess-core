@@ -24,14 +24,18 @@
 | CRP-020 | WHEN a `MoveRecord` is stored THE SYSTEM SHALL preserve optional PGN-derived move metadata including NAG and move comment text when present. | [x] → #4 |
 | CRP-021 | WHEN a `MoveRecord` is stored THE SYSTEM SHALL treat `uci` as the canonical move encoding. | [x] → #4 |
 | CRP-022 | WHEN a `MoveRecord` is stored THE SYSTEM SHALL preserve `from_square`, `to_square`, and `promotion_piece` as denormalized query-friendly fields derived from `uci`. | [x] → #4 |
-| CRP-023 | WHEN a review episode is captured THE SYSTEM SHALL represent it as an `AnalysisSession` rooted at a `PositionOccurrence`. | [ ] → #10 |
-| CRP-024 | WHEN an `AnalysisSession` is stored THE SYSTEM SHALL preserve `author_type` and `session_kind` from the approved enum set (`user`, `llm`, `engine`, `import`) and (`postgame`, `book-review`, `opening-study`, `puzzle-review`, `manual`) respectively. | [ ] → #10 |
-| CRP-025 | WHEN an `AnalysisSession` is stored THE SYSTEM SHALL preserve `title`, `started_at`, and nullable `ended_at` as session lifecycle fields. | [ ] → #10 |
-| CRP-026 | WHEN an `AnalysisSession` contains candidate-line exploration THE SYSTEM SHALL store explored moves as `AnalysisNode` records connected by parent-child relationships. | [ ] → #10 |
-| CRP-027 | WHEN sibling `AnalysisNode` records exist under the same parent THE SYSTEM SHALL preserve explicit child ordering through `branch_order`. | [ ] → #10 |
-| CRP-028 | WHEN an `AnalysisNode` is stored THE SYSTEM SHALL preserve `node_index` as a stable per-session insertion-order identifier. | [ ] → #10 |
-| CRP-029 | WHEN an `AnalysisNode` is stored THE SYSTEM SHALL preserve `ply_depth` as the node depth from the root position within the variation tree. | [ ] → #10 |
-| CRP-030 | WHEN an `AnalysisNode` is stored THE SYSTEM SHALL preserve `root_position_occurrence_id` as a denormalized reference for fast lookup back to the root study position. | [ ] → #10 |
+| CRP-023 | WHEN a review episode is captured THE SYSTEM SHALL represent it as an `AnalysisSession` rooted at an existing `PositionOccurrence`. | [x] → #10 |
+| CRP-024 | WHEN an `AnalysisSession` is stored THE SYSTEM SHALL preserve `author_type` and `session_kind` from the approved enum set (`user`, `llm`, `engine`, `import`) and (`postgame`, `book-review`, `opening-study`, `puzzle-review`, `manual`) respectively. | [x] → #10 |
+| CRP-025 | WHEN an `AnalysisSession` is stored THE SYSTEM SHALL preserve `title`, `started_at`, and nullable `ended_at`, where `ended_at` remains null for an open session. | [x] → #10 |
+| CRP-025a | WHEN an `AnalysisSession` capture is submitted without any candidate-line nodes THE SYSTEM SHALL reject the submission rather than persist an empty session. | [ ] → #10 |
+| CRP-026 | WHEN an `AnalysisSession` contains candidate-line exploration THE SYSTEM SHALL store explored moves as `AnalysisNode` records connected by parent-child relationships. | [x] → #10 |
+| CRP-026a | WHEN one review-capture submission persists an `AnalysisSession` and its `AnalysisNode` tree THE SYSTEM SHALL commit the full tree atomically or roll the full capture back. | [x] → #10 |
+| CRP-026b | WHEN an `AnalysisNode` submission references a `parent_node_id` that belongs to a different `AnalysisSession` THE SYSTEM SHALL reject the submission rather than create a cross-session tree edge. | [x] → #10 |
+| CRP-027 | WHEN sibling `AnalysisNode` records exist under the same parent THE SYSTEM SHALL preserve explicit child ordering through zero-based `branch_order` values that are unique within that sibling set, including root-level siblings. | [x] → #10 |
+| CRP-028 | WHEN an `AnalysisNode` is stored THE SYSTEM SHALL preserve caller-supplied `node_index` as a stable zero-based per-session identifier. | [x] → #10 |
+| CRP-029 | WHEN an `AnalysisNode` is stored THE SYSTEM SHALL preserve `ply_depth` as the node depth from the root position within the variation tree. | [x] → #10 |
+| CRP-029a | WHEN an `AnalysisNode` is stored with a non-null parent THE SYSTEM SHALL preserve `ply_depth` as exactly one greater than the parent node's `ply_depth`. | [x] → #10 |
+| CRP-030 | WHEN an `AnalysisNode` is stored THE SYSTEM SHALL preserve `root_position_occurrence_id` as a denormalized reference equal to the owning `AnalysisSession.root_position_occurrence_id` for fast lookup back to the root study position. | [x] → #10 |
 | CRP-031 | WHEN a variation or plan has durable study value THE SYSTEM SHALL allow it to be promoted into a reusable `StudyLine`. | [ ] → #12 |
 | CRP-032 | WHEN a `StudyLine` is stored THE SYSTEM SHALL preserve `title`, `root_fen`, `canonical_line_uci`, `line_purpose`, `status`, nullable `summary`, and `updated_at` as core study-line fields, where `line_purpose` is one of (`opening-reference`, `middlegame-plan`, `tactical-motif`, `endgame-technique`, `defensive-resource`, `refutation`, `calculation-pattern`, `mistake-pattern`, `memorize`, `review-later`) and `status` is one of (`active`, `archived`). | [ ] → #12 |
 | CRP-033 | WHEN a `StudyLine` is promoted from a specific analysis session THE SYSTEM SHALL allow `origin_analysis_session_id` to reference that source session. | [ ] → #12 |

@@ -60,9 +60,10 @@ flowchart LR
         direction LR
         User --> Analyze[Choose root PositionOccurrence]:::lane
         LLM --> Structured[Produce structured candidate-line output]:::lane
-        Analyze --> SaveSession[Persist AnalysisSession and AnalysisNode tree]:::output
+        Analyze --> SaveSession[Persist AnalysisSession and AnalysisNode tree atomically]:::output
         Structured --> SaveSession
-        SaveSession --> OptAnn[Optionally persist Annotation]:::output
+        SaveSession --> OrderSemantics[Assign session-local node_index, sibling branch_order, and depth from root]:::output
+        OrderSemantics --> OptAnn[Optionally persist Annotation]:::output
     end
 
     Root --> Review
@@ -72,6 +73,11 @@ flowchart LR
 ## Reading Notes
 - Puzzle provenance for review flows through the root `PositionOccurrence`, not a
   direct `puzzle_id` on `AnalysisSession`.
+- Analysis-tree persistence is atomic per capture submission; failed node
+  validation must not leave behind a partial session tree.
+- `AnalysisNode.node_index` is a caller-supplied stable session-local
+  identifier, `branch_order` is sibling-local display order, and `ply_depth`
+  counts plies from the root `PositionOccurrence`.
 - File-backed puzzle datasets commit valid rows independently and reuse the same
   failed `SourceDocument` on retry, skipping already committed puzzles using
   `external_puzzle_id` when present or (`source_provider`, `fen`) otherwise.
