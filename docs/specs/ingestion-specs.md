@@ -16,11 +16,11 @@
 | ING-012 | WHEN a PGN import fails partway through a multi-game file THE SYSTEM SHALL retain the existing `SourceDocument` and support retry under that same record. | [ ] → #7 |
 | ING-013 | WHEN a PGN import is retried under an existing failed `SourceDocument` THE SYSTEM SHALL reset `import_status` to `pending` before resuming domain-record ingestion. | [ ] → #7 |
 | ING-014 | WHEN a PGN import is retried after partial success THE SYSTEM SHALL deduplicate per game using `Game.external_game_key` within the existing `SourceDocument`. | [ ] → #7 |
-| ING-015 | WHEN book/document ingestion processes extracted text THE SYSTEM SHALL create `BookChunk` rows even if chapter labels, section labels, or page ranges are unavailable. | [ ] → #5 |
-| ING-016 | WHEN book/document ingestion receives citation metadata THE SYSTEM SHALL preserve chapter labels, section labels, and page ranges on `BookChunk` rows. | [ ] → #5 |
-| ING-017 | WHEN a file-backed book/document import is retried and a matching `SourceDocument.content_hash` already exists in `complete` state THE SYSTEM SHALL skip duplicate whole-file re-import by default unless an explicit overwrite mode is requested. | [ ] → #5 |
-| ING-018 | WHEN book/document chunk extraction fails under a `SourceDocument` THE SYSTEM SHALL mark the `SourceDocument` as `failed`. | [ ] → #5 |
-| ING-019 | WHEN a failed book/document import is retried THE SYSTEM SHALL reuse the existing failed `SourceDocument`, reset `import_status` to `pending`, and rerun the chunk batch as a whole. | [ ] → #5 |
+| ING-015 | WHEN book/document ingestion processes extracted text THE SYSTEM SHALL create `BookChunk` rows even if chapter labels, section labels, or page ranges are unavailable. | [x] → #5 |
+| ING-016 | WHEN book/document ingestion receives citation metadata THE SYSTEM SHALL preserve chapter labels, section labels, and page ranges on `BookChunk` rows. | [x] → #5 |
+| ING-017 | WHEN a file-backed book/document import is retried and a matching `SourceDocument.content_hash` already exists in `complete` state THE SYSTEM SHALL skip duplicate whole-file re-import by default unless an explicit overwrite mode is requested. | [x] → #5 |
+| ING-018 | WHEN book/document chunk extraction fails under a `SourceDocument` THE SYSTEM SHALL mark the `SourceDocument` as `failed`. | [x] → #5 |
+| ING-019 | WHEN a failed book/document import is retried THE SYSTEM SHALL reuse the existing failed `SourceDocument`, reset `import_status` to `pending`, and rerun the chunk batch as a whole. | [x] → #5 |
 | ING-020 | WHEN a user links imported source text to corpus objects after ingestion THE SYSTEM SHALL persist the link as `BookAnchor` and SHALL allow multiple targets per source chunk. | [ ] → #8 |
 | ING-021 | WHEN an external LLM response is attached as freeform commentary THE SYSTEM SHALL persist it as an `Annotation` without mutating imported source records directly. | [ ] → #11 |
 | ING-022 | WHEN an external LLM response contains structured candidate-line exploration THE SYSTEM SHALL allow ingestion as `AnalysisSession` plus `AnalysisNode` records. | [ ] → #13 |

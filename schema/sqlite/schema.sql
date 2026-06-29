@@ -38,6 +38,38 @@ CREATE UNIQUE INDEX source_documents_active_content_hash_unique
 ON source_documents (content_hash)
 WHERE import_status != 'failed';
 
+-- @spec ING-015
+-- @spec ING-016
+-- @spec ING-017
+-- @spec ING-018
+-- @spec ING-019
+-- @spec CRP-034
+CREATE TABLE book_chunks (
+  id INTEGER PRIMARY KEY,
+  source_document_id INTEGER NOT NULL REFERENCES source_documents(id) ON DELETE RESTRICT,
+  chapter_label TEXT,
+  section_label TEXT,
+  page_start INTEGER,
+  page_end INTEGER,
+  chunk_index INTEGER NOT NULL CHECK (chunk_index >= 0),
+  text TEXT NOT NULL CHECK (trim(text) <> ''),
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CHECK (page_start IS NULL OR page_start > 0),
+  CHECK (page_end IS NULL OR page_end > 0),
+  CHECK (
+    page_start IS NULL
+    OR page_end IS NULL
+    OR page_end >= page_start
+  )
+);
+
+-- @spec ING-019
+CREATE UNIQUE INDEX book_chunks_source_document_chunk_index_unique
+ON book_chunks (source_document_id, chunk_index);
+
+CREATE INDEX book_chunks_source_document_idx
+ON book_chunks (source_document_id);
+
 -- @spec PZL-001
 -- @spec PZL-002
 -- @spec PZL-003
