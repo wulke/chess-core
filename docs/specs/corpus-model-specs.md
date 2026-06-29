@@ -39,10 +39,10 @@
 | CRP-035 | WHEN a book excerpt is linked to chess meaning THE SYSTEM SHALL represent the link as a `BookAnchor` without mutating the source `BookChunk`. | [ ] → #8 |
 | CRP-036 | WHEN a `BookAnchor` is stored THE SYSTEM SHALL preserve `anchor_kind` from the approved enum set (`example`, `discussion`, `diagram`, `exercise`, `reference`) for anchor semantics. | [ ] → #8 |
 | CRP-037 | WHEN a `BookAnchor` target is chosen in v1 THE SYSTEM SHALL preserve `target_type` from the approved enum set (`position_occurrence`, `study_line`, `game`, `puzzle`, `analysis_session`, `analysis_node`) and SHALL exclude `move_record` from supported target types. | [ ] → #8 |
-| CRP-038 | WHEN a note, evaluation, label, or commentary is attached to a corpus object THE SYSTEM SHALL store it as an `Annotation` with target polymorphism across supported entity types. | [ ] → #11 |
-| CRP-039 | WHEN an `Annotation` is stored THE SYSTEM SHALL preserve `author_type` from the approved enum set (`user`, `llm`, `engine`, `import`) to identify who authored the annotation. | [ ] → #11 |
-| CRP-040 | WHEN an `Annotation` is stored THE SYSTEM SHALL preserve `annotation_kind` from the approved enum set (`note`, `commentary`, `evaluation`, `label`, `summary`, `warning`) for annotation semantics. | [ ] → #11 |
-| CRP-041 | WHEN structured annotation data exists alongside human-readable annotation text THE SYSTEM SHALL allow it to be stored in `payload_json`. | [ ] → #11 |
+| CRP-038 | WHEN a note, evaluation, label, or commentary is attached to a supported corpus object THE SYSTEM SHALL store it as an `Annotation` with target polymorphism across (`position_occurrence`, `study_line`, `game`, `puzzle`, `book_chunk`, `analysis_session`, `analysis_node`, `move_record`). | [x] → #11 |
+| CRP-039 | WHEN an `Annotation` is stored THE SYSTEM SHALL preserve `author_type` from the approved enum set (`user`, `llm`, `engine`, `import`) to identify who authored the annotation. | [x] → #11 |
+| CRP-040 | WHEN an `Annotation` is stored THE SYSTEM SHALL preserve `annotation_kind` from the approved enum set (`note`, `commentary`, `evaluation`, `label`, `summary`, `warning`) for annotation semantics. | [x] → #11 |
+| CRP-041 | WHEN structured annotation data exists alongside human-readable annotation text THE SYSTEM SHALL allow it to be stored in `payload_json`. | [x] → #11 |
 | CRP-042 | WHEN a puzzle is stored THE SYSTEM SHALL represent it as a first-class `Puzzle` entity rather than overloading `SourceDocument`. | [x] → #6 |
 | CRP-043 | WHEN a `Puzzle` is stored THE SYSTEM SHALL preserve `side_to_move` as a denormalized value that agrees with the puzzle FEN payload. | [x] → #6 |
 | CRP-044 | WHEN a `Puzzle` is stored THE SYSTEM SHALL preserve `source_provider` from the approved enum set (`lichess`, `manual`, `import`). | [x] → #6 |
@@ -52,3 +52,4 @@
 | CRP-048 | WHEN a `SourceDocument.import_status` is not `complete` THE SYSTEM SHALL allow `imported_at` to remain null. | [x] → #3 |
 | CRP-049 | WHEN a `SourceDocument.import_status` transitions to `complete` THE SYSTEM SHALL populate `imported_at` with the successful completion timestamp. | [x] → #3 |
 | CRP-050 | WHEN a `BookAnchor` is stored THE SYSTEM SHALL preserve `target_id` as the identifier of the record selected by `target_type`. | [ ] → #8 |
+| CRP-051 | WHEN a correction, supersession, or revision to an existing `Annotation` is required THE SYSTEM SHALL persist it as a new `Annotation` row and SHALL NOT mutate the existing row in place. | [x] → #11 |

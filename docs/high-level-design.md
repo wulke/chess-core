@@ -10,6 +10,13 @@ Establish `chess-core` as the source-of-truth repository for the local-first che
   - Option C: Create a neutral foundation repository that owns the canonical corpus model and integration contracts while letting individual tools remain separate.
 - **Decision**: Option C — create `chess-core` as a dedicated foundation repo. This keeps architectural intent independent from any one existing tool, reduces semantic drift across repositories, and preserves freedom to refactor or replace individual apps without losing the long-term study model.
 
+### Annotation Attachment Strategy
+- **Options**:
+  - Option A: Store notes and commentary directly on each owning entity row such as `Game`, `PositionOccurrence`, `BookChunk`, or `MoveRecord`.
+  - Option B: Create separate per-entity annotation tables such as `game_annotations`, `position_annotations`, and `book_chunk_annotations`.
+  - Option C: Store cross-entity commentary in one polymorphic `Annotation` record set keyed by target type and target id, while preserving imported source rows as immutable provenance records.
+- **Decision**: Option C — use a single polymorphic annotation model for cross-entity commentary and derived meaning. This keeps notes, labels, evaluations, summaries, and freeform LLM output under one contract across supported corpus objects, avoids copy-pasting similar annotation schemas per entity, and preserves the boundary that imported source records are enriched through append-only sidecar records rather than edited in place.
+
 ## Architecture
 
 ### Components
