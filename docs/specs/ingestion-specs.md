@@ -9,9 +9,9 @@
 | ING-005 | WHEN ingestion succeeds for a `SourceDocument` THE SYSTEM SHALL set `import_status` to `complete`. | [x] → #3 |
 | ING-006 | WHEN ingestion fails after `SourceDocument` registration THE SYSTEM SHALL set `import_status` to `failed`. | [x] → #3 |
 | ING-007 | WHEN `chess-core` ingests file-backed artifacts THE SYSTEM SHALL use a staged-commit model where `SourceDocument` registration is committed before domain-record import units are committed. | [x] → #3 |
-| ING-008 | WHEN PGN ingestion processes a file THE SYSTEM SHALL preserve the original PGN text on each imported `Game`. | [ ] → #4 |
-| ING-009 | WHEN PGN ingestion processes a game THE SYSTEM SHALL normalize individual moves into `MoveRecord` rows. | [ ] → #4 |
-| ING-010 | WHEN PGN ingestion processes a game THE SYSTEM SHALL derive `PositionOccurrence` rows for mainline game positions in v1. | [ ] → #4 |
+| ING-008 | WHEN PGN ingestion processes a file THE SYSTEM SHALL preserve the original PGN text on each imported `Game`. | [x] → #4 |
+| ING-009 | WHEN PGN ingestion processes a game THE SYSTEM SHALL normalize individual moves into `MoveRecord` rows. | [x] → #4 |
+| ING-010 | WHEN PGN ingestion processes a game THE SYSTEM SHALL derive `PositionOccurrence` rows for mainline game positions in v1. | [x] → #4 |
 | ING-011 | WHEN a file-backed PGN import is retried and a matching `SourceDocument.content_hash` already exists in `complete` state THE SYSTEM SHALL skip duplicate whole-file re-import by default unless an explicit overwrite mode is requested. | [ ] → #7 |
 | ING-012 | WHEN a PGN import fails partway through a multi-game file THE SYSTEM SHALL retain the existing `SourceDocument` and support retry under that same record. | [ ] → #7 |
 | ING-013 | WHEN a PGN import is retried under an existing failed `SourceDocument` THE SYSTEM SHALL reset `import_status` to `pending` before resuming domain-record ingestion. | [ ] → #7 |
