@@ -283,6 +283,8 @@ ON position_occurrences (game_id, ply_index);
 -- @spec CRP-009
 -- @spec CRP-010
 -- @spec CRP-011
+-- SQLite cannot share one trigger body across INSERT and UPDATE events, so any
+-- validation change here must be mirrored in position_occurrences_validate_update_context.
 CREATE TRIGGER position_occurrences_validate_insert_context
 BEFORE INSERT ON position_occurrences
 FOR EACH ROW
@@ -337,6 +339,7 @@ END;
 -- @spec CRP-009
 -- @spec CRP-010
 -- @spec CRP-011
+-- Keep this logic aligned with position_occurrences_validate_insert_context.
 CREATE TRIGGER position_occurrences_validate_update_context
 BEFORE UPDATE ON position_occurrences
 FOR EACH ROW
@@ -474,6 +477,8 @@ ON move_records (game_id, move_number, ply_index);
 -- @spec CRP-018
 -- @spec CRP-021
 -- @spec CRP-022
+-- SQLite cannot share one trigger body across INSERT and UPDATE events, so any
+-- validation change here must be mirrored in move_records_validate_update_links.
 CREATE TRIGGER move_records_validate_insert_links
 BEFORE INSERT ON move_records
 FOR EACH ROW
@@ -528,6 +533,7 @@ END;
 -- @spec CRP-018
 -- @spec CRP-021
 -- @spec CRP-022
+-- Keep this logic aligned with move_records_validate_insert_links.
 CREATE TRIGGER move_records_validate_update_links
 BEFORE UPDATE ON move_records
 FOR EACH ROW

@@ -393,6 +393,34 @@ then
 fi
 
 if sqlite3 "$DB_PATH" 2>/dev/null <<'SQL'
+INSERT INTO position_occurrences (
+  fen,
+  side_to_move,
+  position_hash,
+  source_kind,
+  source_ref_id,
+  game_id,
+  move_number,
+  ply_index,
+  is_mainline
+) VALUES (
+  '8/8/8/8/8/8/8/K6k w - - 0 1',
+  'w',
+  'bad-game-ref-mismatch',
+  'game',
+  999,
+  1,
+  1,
+  7,
+  1
+);
+SQL
+then
+  echo "expected game position occurrence with mismatched source_ref_id and game_id to fail" >&2
+  exit 1
+fi
+
+if sqlite3 "$DB_PATH" 2>/dev/null <<'SQL'
 INSERT INTO move_records (
   game_id,
   from_position_occurrence_id,
@@ -427,5 +455,119 @@ INSERT INTO move_records (
 SQL
 then
   echo "expected cross-position move link to fail when source positions do not match the move game" >&2
+  exit 1
+fi
+
+if sqlite3 "$DB_PATH" 2>/dev/null <<'SQL'
+INSERT INTO move_records (
+  game_id,
+  from_position_occurrence_id,
+  to_position_occurrence_id,
+  ply_index,
+  move_number,
+  side,
+  san,
+  uci,
+  piece,
+  from_square,
+  to_square,
+  is_capture,
+  is_check,
+  is_checkmate
+) VALUES (
+  1,
+  1,
+  2,
+  2,
+  1,
+  'w',
+  'e4',
+  'e2e4',
+  'P',
+  'e2',
+  'e4',
+  0,
+  0,
+  0
+);
+SQL
+then
+  echo "expected side parity mismatch to fail" >&2
+  exit 1
+fi
+
+if sqlite3 "$DB_PATH" 2>/dev/null <<'SQL'
+INSERT INTO move_records (
+  game_id,
+  from_position_occurrence_id,
+  to_position_occurrence_id,
+  ply_index,
+  move_number,
+  side,
+  san,
+  uci,
+  piece,
+  from_square,
+  to_square,
+  is_capture,
+  is_check,
+  is_checkmate
+) VALUES (
+  1,
+  1,
+  3,
+  2,
+  1,
+  'b',
+  'e5',
+  'e7e5',
+  'P',
+  'e7',
+  'e5',
+  0,
+  0,
+  0
+);
+SQL
+then
+  echo "expected non-consecutive move link to fail" >&2
+  exit 1
+fi
+
+if sqlite3 "$DB_PATH" 2>/dev/null <<'SQL'
+INSERT INTO move_records (
+  game_id,
+  from_position_occurrence_id,
+  to_position_occurrence_id,
+  ply_index,
+  move_number,
+  side,
+  san,
+  uci,
+  piece,
+  from_square,
+  to_square,
+  is_capture,
+  is_check,
+  is_checkmate
+) VALUES (
+  1,
+  1,
+  2,
+  0,
+  1,
+  'w',
+  'e4',
+  'e2e4',
+  'P',
+  'e2',
+  'e4',
+  0,
+  0,
+  0
+);
+SQL
+then
+  echo "expected ply_index zero to fail" >&2
   exit 1
 fi
