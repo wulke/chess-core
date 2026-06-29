@@ -29,6 +29,10 @@ CREATE TABLE source_documents (
 CREATE INDEX source_documents_content_hash_idx
 ON source_documents (content_hash);
 
+CREATE UNIQUE INDEX source_documents_active_content_hash_unique
+ON source_documents (content_hash)
+WHERE import_status != 'failed';
+
 -- @spec PZL-002
 -- @spec PZL-003
 -- @spec PZL-004
@@ -42,7 +46,7 @@ ON source_documents (content_hash);
 -- @spec ING-003
 CREATE TABLE puzzles (
   id INTEGER PRIMARY KEY,
-  source_document_id INTEGER REFERENCES source_documents(id),
+  source_document_id INTEGER REFERENCES source_documents(id) ON DELETE RESTRICT,
   external_puzzle_id TEXT,
   source_provider TEXT NOT NULL CHECK (source_provider IN ('lichess', 'manual', 'import')),
   fen TEXT NOT NULL CHECK (trim(fen) <> ''),

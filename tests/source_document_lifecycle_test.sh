@@ -102,6 +102,50 @@ INSERT INTO source_documents (
   imported_at
 ) VALUES (
   'text-extract',
+  'invalid-pending.txt',
+  '/tmp/invalid-pending.txt',
+  'sha256:jkl012',
+  'pending',
+  '2026-06-29 12:15:00'
+);
+SQL
+then
+  echo "expected pending source document with imported_at to fail" >&2
+  exit 1
+fi
+
+if sqlite3 "$DB_PATH" 2>/dev/null <<'SQL'
+INSERT INTO source_documents (
+  source_type,
+  title,
+  path,
+  content_hash,
+  import_status,
+  imported_at
+) VALUES (
+  'text-extract',
+  'invalid-failed.txt',
+  '/tmp/invalid-failed.txt',
+  'sha256:mno345',
+  'failed',
+  '2026-06-29 12:30:00'
+);
+SQL
+then
+  echo "expected failed source document with imported_at to fail" >&2
+  exit 1
+fi
+
+if sqlite3 "$DB_PATH" 2>/dev/null <<'SQL'
+INSERT INTO source_documents (
+  source_type,
+  title,
+  path,
+  content_hash,
+  import_status,
+  imported_at
+) VALUES (
+  'text-extract',
   'invalid.txt',
   '/tmp/invalid.txt',
   'sha256:ghi789',
@@ -113,3 +157,42 @@ then
   echo "expected complete source document without imported_at to fail" >&2
   exit 1
 fi
+
+if sqlite3 "$DB_PATH" 2>/dev/null <<'SQL'
+INSERT INTO source_documents (
+  source_type,
+  title,
+  path,
+  content_hash,
+  import_status
+) VALUES (
+  'pgn',
+  'duplicate-complete.pgn',
+  '/tmp/duplicate-complete.pgn',
+  'sha256:abc123',
+  'pending'
+);
+SQL
+then
+  echo "expected duplicate active content_hash insert to fail" >&2
+  exit 1
+fi
+
+sqlite3 "$DB_PATH" <<'SQL'
+INSERT INTO source_documents (
+  source_type,
+  title,
+  path,
+  content_hash,
+  import_status
+) VALUES (
+  'pdf',
+  'retryable-failure.pdf',
+  '/tmp/retryable-failure.pdf',
+  'sha256:def456',
+  'failed'
+);
+SQL
+
+failed_hash_count="$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM source_documents WHERE content_hash = 'sha256:def456';")"
+[[ "$failed_hash_count" == "2" ]]
