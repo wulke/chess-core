@@ -7,9 +7,9 @@
 | CRP-003 | WHEN a `PositionOccurrence` is stored THE SYSTEM SHALL persist `side_to_move` as a denormalized value that agrees with the FEN payload. | [ ] → #4 |
 | CRP-004 | WHEN a `PositionOccurrence` has `source_kind = 'game'` THE SYSTEM SHALL resolve `source_ref_id` to `Game.id`. | [ ] → #4 |
 | CRP-005 | WHEN a `PositionOccurrence` has `source_kind = 'book'` THE SYSTEM SHALL resolve `source_ref_id` to `BookChunk.id`. | [ ] → #8 |
-| CRP-006 | WHEN a `PositionOccurrence` has `source_kind = 'puzzle'` THE SYSTEM SHALL resolve `source_ref_id` to `Puzzle.id`. | [ ] → #6 |
+| CRP-006 | WHEN a `PositionOccurrence` has `source_kind = 'puzzle'` THE SYSTEM SHALL resolve `source_ref_id` to `Puzzle.id`. | [x] → #6 |
 | CRP-007 | WHEN a `PositionOccurrence` has `source_kind = 'manual'` THE SYSTEM SHALL allow `source_ref_id` to be null. | [ ] → #4 |
-| CRP-008 | WHEN `PositionOccurrence` records come from non-game contexts THE SYSTEM SHALL allow `move_number` and `ply_index` to be null. | [ ] → #6 |
+| CRP-008 | WHEN `PositionOccurrence` records come from non-game contexts THE SYSTEM SHALL allow `move_number` and `ply_index` to be null. | [x] → #6 |
 | CRP-009 | WHEN a `PositionOccurrence` is stored THE SYSTEM SHALL persist `position_hash` as a stable equality-and-indexing aid without replacing FEN as the canonical position payload. | [ ] → #4 |
 | CRP-010 | WHEN a `PositionOccurrence` is stored THE SYSTEM SHALL persist `is_mainline` to distinguish mainline positions from non-mainline contexts. | [ ] → #4 |
 | CRP-011 | WHEN a `PositionOccurrence` belongs to a game context THE SYSTEM SHALL allow a direct nullable `game_id` reference to the owning `Game` for join-friendly access independent of polymorphic source resolution. | [ ] → #4 |
@@ -43,11 +43,11 @@
 | CRP-039 | WHEN an `Annotation` is stored THE SYSTEM SHALL preserve `author_type` from the approved enum set (`user`, `llm`, `engine`, `import`) to identify who authored the annotation. | [ ] → #11 |
 | CRP-040 | WHEN an `Annotation` is stored THE SYSTEM SHALL preserve `annotation_kind` from the approved enum set (`note`, `commentary`, `evaluation`, `label`, `summary`, `warning`) for annotation semantics. | [ ] → #11 |
 | CRP-041 | WHEN structured annotation data exists alongside human-readable annotation text THE SYSTEM SHALL allow it to be stored in `payload_json`. | [ ] → #11 |
-| CRP-042 | WHEN a puzzle is stored THE SYSTEM SHALL represent it as a first-class `Puzzle` entity rather than overloading `SourceDocument`. | [ ] → #6 |
-| CRP-043 | WHEN a `Puzzle` is stored THE SYSTEM SHALL preserve `side_to_move` as a denormalized value that agrees with the puzzle FEN payload. | [ ] → #6 |
-| CRP-044 | WHEN a `Puzzle` is stored THE SYSTEM SHALL preserve `source_provider` from the approved enum set (`lichess`, `manual`, `import`). | [ ] → #6 |
-| CRP-045 | WHEN a `Puzzle.external_puzzle_id` is non-null THE SYSTEM SHALL enforce uniqueness for that identifier. | [ ] → #6 |
-| CRP-046 | WHEN a `Puzzle.external_puzzle_id` is null THE SYSTEM SHALL treat (`source_provider`, `fen`) as the fallback uniqueness basis. | [ ] → #6 |
+| CRP-042 | WHEN a puzzle is stored THE SYSTEM SHALL represent it as a first-class `Puzzle` entity rather than overloading `SourceDocument`. | [x] → #6 |
+| CRP-043 | WHEN a `Puzzle` is stored THE SYSTEM SHALL preserve `side_to_move` as a denormalized value that agrees with the puzzle FEN payload. | [x] → #6 |
+| CRP-044 | WHEN a `Puzzle` is stored THE SYSTEM SHALL preserve `source_provider` from the approved enum set (`lichess`, `manual`, `import`). | [x] → #6 |
+| CRP-045 | WHEN a `Puzzle.external_puzzle_id` is non-null THE SYSTEM SHALL enforce uniqueness for that identifier. | [x] → #6 |
+| CRP-046 | WHEN a `Puzzle.external_puzzle_id` is null THE SYSTEM SHALL treat (`source_provider`, `fen`) as the fallback uniqueness basis. | [x] → #6 |
 | CRP-047 | WHEN a `SourceDocument` is stored THE SYSTEM SHALL track `import_status` as `pending`, `complete`, or `failed`. | [ ] → #3 |
 | CRP-048 | WHEN a `SourceDocument.import_status` is not `complete` THE SYSTEM SHALL allow `imported_at` to remain null. | [ ] → #3 |
 | CRP-049 | WHEN a `SourceDocument.import_status` transitions to `complete` THE SYSTEM SHALL populate `imported_at` with the successful completion timestamp. | [ ] → #3 |

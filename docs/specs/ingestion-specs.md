@@ -4,7 +4,7 @@
 |---|---|---|
 | ING-001 | WHEN a file-backed raw artifact is registered for ingestion THE SYSTEM SHALL create a `SourceDocument` before domain-record ingestion begins. | [ ] → #3 |
 | ING-002 | WHEN a file-backed raw artifact is registered as a `SourceDocument` THE SYSTEM SHALL store the local file path and file content hash. | [ ] → #3 |
-| ING-003 | WHEN a manual puzzle is created without a backing file THE SYSTEM SHALL allow ingestion to proceed without creating a `SourceDocument`. | [ ] → #6 |
+| ING-003 | WHEN a manual puzzle is created without a backing file THE SYSTEM SHALL allow ingestion to proceed without creating a `SourceDocument`. | [x] → #6 |
 | ING-004 | WHEN domain-record ingestion begins for a newly registered `SourceDocument` THE SYSTEM SHALL set `import_status` to `pending`. | [ ] → #3 |
 | ING-005 | WHEN ingestion succeeds for a `SourceDocument` THE SYSTEM SHALL set `import_status` to `complete`. | [ ] → #3 |
 | ING-006 | WHEN ingestion fails after `SourceDocument` registration THE SYSTEM SHALL set `import_status` to `failed`. | [ ] → #3 |
