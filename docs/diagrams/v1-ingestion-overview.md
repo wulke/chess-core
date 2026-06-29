@@ -51,5 +51,9 @@ flowchart TD
 ## Reading Notes
 - File-backed ingestion uses the staged-commit model: `SourceDocument` first, then
   domain records.
+- Successful canonical `sqlite` writes are the v1 file-backed ingestion
+  completion boundary.
+- Derived analytics or projection layers such as `duckdb` are outside the
+  file-backed critical path and do not block completion.
 - PGN and book/document retries reuse the failed `SourceDocument`.
 - Puzzle dataset ingestion may keep valid rows even when some rows are malformed.
