@@ -54,6 +54,8 @@ CREATE TABLE book_chunks (
   chunk_index INTEGER NOT NULL CHECK (chunk_index >= 0),
   text TEXT NOT NULL CHECK (trim(text) <> ''),
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CHECK (chapter_label IS NULL OR trim(chapter_label) <> ''),
+  CHECK (section_label IS NULL OR trim(section_label) <> ''),
   CHECK (page_start IS NULL OR page_start > 0),
   CHECK (page_end IS NULL OR page_end > 0),
   CHECK (
@@ -63,7 +65,7 @@ CREATE TABLE book_chunks (
   )
 );
 
--- @spec ING-019
+-- @spec CRP-034
 CREATE UNIQUE INDEX book_chunks_source_document_chunk_index_unique
 ON book_chunks (source_document_id, chunk_index);
 
