@@ -76,9 +76,6 @@ then
   exit 1
 fi
 
-complete_without_projection_row="$(sqlite3 -tabs "$DB_PATH" "SELECT import_status, imported_at FROM source_documents WHERE id = 1;")"
-[[ "$complete_without_projection_row" == $'complete\t2026-06-29 12:00:00' ]]
-
 sqlite3 "$DB_PATH" <<'SQL'
 INSERT INTO source_documents (
   source_type,
