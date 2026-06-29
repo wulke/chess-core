@@ -3,7 +3,7 @@
 Backed by:
 - [docs/llds/storage-and-ingestion.md](/Users/trevorwulke/workspace/chess-core/docs/llds/storage-and-ingestion.md)
 - [docs/llds/canonical-corpus-model.md](/Users/trevorwulke/workspace/chess-core/docs/llds/canonical-corpus-model.md)
-- Specs: `ING-001` through `ING-023`, `PZL-001` through `PZL-012`
+- Specs: `ING-001` through `ING-023`, `PZL-001` through `PZL-017`
 
 This diagram shows the shared lifecycle shape across v1 source families. Detailed
 per-source semantics are split into the focused workflow docs.

@@ -12,6 +12,9 @@ PRAGMA foreign_keys = ON;
 -- @spec CRP-047
 -- @spec CRP-048
 -- @spec CRP-049
+-- @spec PZL-015
+-- @spec PZL-016
+-- @spec PZL-017
 CREATE TABLE source_documents (
   id INTEGER PRIMARY KEY,
   source_type TEXT NOT NULL CHECK (source_type IN ('pgn', 'pdf', 'text-extract', 'puzzle-dataset')),
@@ -30,10 +33,12 @@ CREATE TABLE source_documents (
 CREATE INDEX source_documents_content_hash_idx
 ON source_documents (content_hash);
 
+-- @spec PZL-008
 CREATE UNIQUE INDEX source_documents_active_content_hash_unique
 ON source_documents (content_hash)
 WHERE import_status != 'failed';
 
+-- @spec PZL-001
 -- @spec PZL-002
 -- @spec PZL-003
 -- @spec PZL-004
@@ -75,6 +80,38 @@ WHERE external_puzzle_id IS NOT NULL;
 CREATE UNIQUE INDEX puzzles_source_provider_fen_fallback_unique
 ON puzzles (source_provider, fen)
 WHERE external_puzzle_id IS NULL;
+
+-- @spec PZL-011
+-- @spec PZL-013
+-- @spec PZL-014
+CREATE TRIGGER puzzles_skip_duplicate_file_backed_import_retry
+BEFORE INSERT ON puzzles
+FOR EACH ROW
+WHEN
+  NEW.source_document_id IS NOT NULL
+  AND NEW.source_provider = 'import'
+  AND EXISTS (
+    SELECT 1
+    FROM source_documents
+    WHERE id = NEW.source_document_id
+      AND source_type = 'puzzle-dataset'
+  )
+  AND EXISTS (
+    SELECT 1
+    FROM puzzles
+    WHERE (
+      NEW.external_puzzle_id IS NOT NULL
+      AND external_puzzle_id = NEW.external_puzzle_id
+    ) OR (
+      NEW.external_puzzle_id IS NULL
+      AND external_puzzle_id IS NULL
+      AND source_provider = NEW.source_provider
+      AND fen = NEW.fen
+    )
+  )
+BEGIN
+  SELECT RAISE(IGNORE);
+END;
 
 -- @spec PZL-005
 -- @spec PZL-006
