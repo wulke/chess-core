@@ -2,28 +2,28 @@
 
 | ID | Requirement | Status |
 |---|---|---|
-| CRP-001 | WHEN `chess-core` stores a chess position in the canonical corpus THE SYSTEM SHALL represent it as a `PositionOccurrence` distinguished by context-specific provenance rather than by FEN alone. | [ ] → #4 |
-| CRP-002 | WHEN two study contexts contain the same FEN THE SYSTEM SHALL allow multiple `PositionOccurrence` records to coexist with distinct provenance and annotations. | [ ] → #4 |
-| CRP-003 | WHEN a `PositionOccurrence` is stored THE SYSTEM SHALL persist `side_to_move` as a denormalized value that agrees with the FEN payload. | [ ] → #4 |
-| CRP-004 | WHEN a `PositionOccurrence` has `source_kind = 'game'` THE SYSTEM SHALL resolve `source_ref_id` to `Game.id`. | [ ] → #4 |
+| CRP-001 | WHEN `chess-core` stores a chess position in the canonical corpus THE SYSTEM SHALL represent it as a `PositionOccurrence` distinguished by context-specific provenance rather than by FEN alone. | [x] → #4 |
+| CRP-002 | WHEN two study contexts contain the same FEN THE SYSTEM SHALL allow multiple `PositionOccurrence` records to coexist with distinct provenance and annotations. | [x] → #4 |
+| CRP-003 | WHEN a `PositionOccurrence` is stored THE SYSTEM SHALL persist `side_to_move` as a denormalized value that agrees with the FEN payload. | [x] → #4 |
+| CRP-004 | WHEN a `PositionOccurrence` has `source_kind = 'game'` THE SYSTEM SHALL resolve `source_ref_id` to `Game.id`. | [x] → #4 |
 | CRP-005 | WHEN a `PositionOccurrence` has `source_kind = 'book'` THE SYSTEM SHALL resolve `source_ref_id` to `BookChunk.id`. | [ ] → #8 |
 | CRP-006 | WHEN a `PositionOccurrence` has `source_kind = 'puzzle'` THE SYSTEM SHALL resolve `source_ref_id` to `Puzzle.id`. | [x] → #6 |
-| CRP-007 | WHEN a `PositionOccurrence` has `source_kind = 'manual'` THE SYSTEM SHALL allow `source_ref_id` to be null. | [ ] → #4 |
+| CRP-007 | WHEN a `PositionOccurrence` has `source_kind = 'manual'` THE SYSTEM SHALL allow `source_ref_id` to be null. | [x] → #4 |
 | CRP-008 | WHEN `PositionOccurrence` records come from non-game contexts THE SYSTEM SHALL allow `move_number` and `ply_index` to be null. | [x] → #6 |
-| CRP-009 | WHEN a `PositionOccurrence` is stored THE SYSTEM SHALL persist `position_hash` as a stable equality-and-indexing aid without replacing FEN as the canonical position payload. | [ ] → #4 |
-| CRP-010 | WHEN a `PositionOccurrence` is stored THE SYSTEM SHALL persist `is_mainline` to distinguish mainline positions from non-mainline contexts. | [ ] → #4 |
-| CRP-011 | WHEN a `PositionOccurrence` belongs to a game context THE SYSTEM SHALL allow a direct nullable `game_id` reference to the owning `Game` for join-friendly access independent of polymorphic source resolution. | [ ] → #4 |
-| CRP-012 | WHEN `chess-core` stores a game imported into the corpus THE SYSTEM SHALL represent it as a `Game` with player metadata, event metadata, result metadata, and preserved PGN text. | [ ] → #4 |
+| CRP-009 | WHEN a `PositionOccurrence` is stored THE SYSTEM SHALL persist `position_hash` as a stable equality-and-indexing aid without replacing FEN as the canonical position payload. | [x] → #4 |
+| CRP-010 | WHEN a `PositionOccurrence` is stored THE SYSTEM SHALL persist `is_mainline` to distinguish mainline positions from non-mainline contexts. | [x] → #4 |
+| CRP-011 | WHEN a `PositionOccurrence` belongs to a game context THE SYSTEM SHALL allow a direct nullable `game_id` reference to the owning `Game` for join-friendly access independent of polymorphic source resolution. | [x] → #4 |
+| CRP-012 | WHEN `chess-core` stores a game imported into the corpus THE SYSTEM SHALL represent it as a `Game` with player metadata, event metadata, result metadata, and preserved PGN text. | [x] → #4 |
 | CRP-013 | WHEN a `Game` is stored THE SYSTEM SHALL persist `external_game_key` as the stable per-game deduplication key used during PGN retry. | [ ] → #7 |
-| CRP-014 | WHEN optional PGN metadata such as `played_at`, `termination`, `eco_code`, or `opening_name` is unavailable THE SYSTEM SHALL allow those `Game` fields to remain null. | [ ] → #4 |
-| CRP-015 | WHEN `chess-core` stores a normalized game move THE SYSTEM SHALL represent it as a first-class `MoveRecord`. | [ ] → #4 |
-| CRP-016 | WHEN a `MoveRecord` is stored THE SYSTEM SHALL persist a direct `game_id` reference to its owning `Game`. | [ ] → #4 |
-| CRP-017 | WHEN a `MoveRecord` is stored THE SYSTEM SHALL preserve `move_number`, `ply_index`, and `side` as required game-sequencing fields. | [ ] → #4 |
-| CRP-018 | WHEN a `MoveRecord` is stored THE SYSTEM SHALL link it to both the originating and resulting `PositionOccurrence` rows through `from_position_occurrence_id` and `to_position_occurrence_id`. | [ ] → #4 |
-| CRP-019 | WHEN a `MoveRecord` is stored THE SYSTEM SHALL preserve SAN notation, piece identity, and move outcome flags including capture, check, and checkmate state. | [ ] → #4 |
-| CRP-020 | WHEN a `MoveRecord` is stored THE SYSTEM SHALL preserve optional PGN-derived move metadata including NAG and move comment text when present. | [ ] → #4 |
-| CRP-021 | WHEN a `MoveRecord` is stored THE SYSTEM SHALL treat `uci` as the canonical move encoding. | [ ] → #4 |
-| CRP-022 | WHEN a `MoveRecord` is stored THE SYSTEM SHALL preserve `from_square`, `to_square`, and `promotion_piece` as denormalized query-friendly fields derived from `uci`. | [ ] → #4 |
+| CRP-014 | WHEN optional PGN metadata such as `played_at`, `termination`, `eco_code`, or `opening_name` is unavailable THE SYSTEM SHALL allow those `Game` fields to remain null. | [x] → #4 |
+| CRP-015 | WHEN `chess-core` stores a normalized game move THE SYSTEM SHALL represent it as a first-class `MoveRecord`. | [x] → #4 |
+| CRP-016 | WHEN a `MoveRecord` is stored THE SYSTEM SHALL persist a direct `game_id` reference to its owning `Game`. | [x] → #4 |
+| CRP-017 | WHEN a `MoveRecord` is stored THE SYSTEM SHALL preserve `move_number`, `ply_index`, and `side` as required game-sequencing fields. | [x] → #4 |
+| CRP-018 | WHEN a `MoveRecord` is stored THE SYSTEM SHALL link it to both the originating and resulting `PositionOccurrence` rows through `from_position_occurrence_id` and `to_position_occurrence_id`. | [x] → #4 |
+| CRP-019 | WHEN a `MoveRecord` is stored THE SYSTEM SHALL preserve SAN notation, piece identity, and move outcome flags including capture, check, and checkmate state. | [x] → #4 |
+| CRP-020 | WHEN a `MoveRecord` is stored THE SYSTEM SHALL preserve optional PGN-derived move metadata including NAG and move comment text when present. | [x] → #4 |
+| CRP-021 | WHEN a `MoveRecord` is stored THE SYSTEM SHALL treat `uci` as the canonical move encoding. | [x] → #4 |
+| CRP-022 | WHEN a `MoveRecord` is stored THE SYSTEM SHALL preserve `from_square`, `to_square`, and `promotion_piece` as denormalized query-friendly fields derived from `uci`. | [x] → #4 |
 | CRP-023 | WHEN a review episode is captured THE SYSTEM SHALL represent it as an `AnalysisSession` rooted at a `PositionOccurrence`. | [ ] → #10 |
 | CRP-024 | WHEN an `AnalysisSession` is stored THE SYSTEM SHALL preserve `author_type` and `session_kind` from the approved enum set (`user`, `llm`, `engine`, `import`) and (`postgame`, `book-review`, `opening-study`, `puzzle-review`, `manual`) respectively. | [ ] → #10 |
 | CRP-025 | WHEN an `AnalysisSession` is stored THE SYSTEM SHALL preserve `title`, `started_at`, and nullable `ended_at` as session lifecycle fields. | [ ] → #10 |

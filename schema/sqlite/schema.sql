@@ -38,6 +38,36 @@ CREATE UNIQUE INDEX source_documents_active_content_hash_unique
 ON source_documents (content_hash)
 WHERE import_status != 'failed';
 
+-- @spec ING-008
+-- @spec CRP-012
+-- @spec CRP-014
+CREATE TABLE games (
+  id INTEGER PRIMARY KEY,
+  source_document_id INTEGER NOT NULL REFERENCES source_documents(id) ON DELETE RESTRICT,
+  external_game_key TEXT NOT NULL CHECK (trim(external_game_key) <> ''),
+  white_player TEXT NOT NULL CHECK (trim(white_player) <> ''),
+  black_player TEXT NOT NULL CHECK (trim(black_player) <> ''),
+  event TEXT NOT NULL CHECK (trim(event) <> ''),
+  site TEXT NOT NULL CHECK (trim(site) <> ''),
+  played_at TEXT,
+  result TEXT NOT NULL CHECK (trim(result) <> ''),
+  termination TEXT,
+  eco_code TEXT,
+  opening_name TEXT,
+  pgn_text TEXT NOT NULL CHECK (trim(pgn_text) <> ''),
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CHECK (played_at IS NULL OR trim(played_at) <> ''),
+  CHECK (termination IS NULL OR trim(termination) <> ''),
+  CHECK (eco_code IS NULL OR trim(eco_code) <> ''),
+  CHECK (opening_name IS NULL OR trim(opening_name) <> '')
+);
+
+CREATE UNIQUE INDEX games_source_document_external_key_unique
+ON games (source_document_id, external_game_key);
+
+CREATE INDEX games_source_document_idx
+ON games (source_document_id);
+
 -- @spec ING-015
 -- @spec ING-016
 -- @spec ING-017
@@ -243,6 +273,117 @@ CREATE TABLE position_occurrences (
 CREATE INDEX position_occurrences_source_lookup_idx
 ON position_occurrences (source_kind, source_ref_id);
 
+CREATE INDEX position_occurrences_game_idx
+ON position_occurrences (game_id, ply_index);
+
+-- @spec CRP-001
+-- @spec CRP-003
+-- @spec CRP-004
+-- @spec CRP-007
+-- @spec CRP-009
+-- @spec CRP-010
+-- @spec CRP-011
+CREATE TRIGGER position_occurrences_validate_insert_context
+BEFORE INSERT ON position_occurrences
+FOR EACH ROW
+BEGIN
+  SELECT CASE
+    WHEN NEW.source_kind = 'game' AND NEW.source_ref_id IS NULL
+    THEN RAISE(ABORT, 'game position occurrence requires source_ref_id')
+    WHEN NEW.source_kind = 'game' AND NEW.game_id IS NULL
+    THEN RAISE(ABORT, 'game position occurrence requires game_id')
+    WHEN NEW.source_kind = 'game' AND NEW.source_ref_id != NEW.game_id
+    THEN RAISE(ABORT, 'game position occurrence source_ref_id must match game_id')
+    WHEN NEW.source_kind = 'game'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM games
+        WHERE id = NEW.game_id
+      )
+    THEN RAISE(ABORT, 'game position occurrence references unknown game')
+    WHEN NEW.source_kind = 'book' AND NEW.source_ref_id IS NULL
+    THEN RAISE(ABORT, 'book position occurrence requires source_ref_id')
+    WHEN NEW.source_kind = 'book' AND NEW.game_id IS NOT NULL
+    THEN RAISE(ABORT, 'book position occurrence must not set game_id')
+    WHEN NEW.source_kind = 'book'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM book_chunks
+        WHERE id = NEW.source_ref_id
+      )
+    THEN RAISE(ABORT, 'book position occurrence references unknown book chunk')
+    WHEN NEW.source_kind = 'puzzle' AND NEW.source_ref_id IS NULL
+    THEN RAISE(ABORT, 'puzzle position occurrence requires source_ref_id')
+    WHEN NEW.source_kind = 'puzzle' AND NEW.game_id IS NOT NULL
+    THEN RAISE(ABORT, 'puzzle position occurrence must not set game_id')
+    WHEN NEW.source_kind = 'puzzle'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM puzzles
+        WHERE id = NEW.source_ref_id
+      )
+    THEN RAISE(ABORT, 'puzzle position occurrence references unknown puzzle')
+    WHEN NEW.source_kind = 'manual' AND NEW.source_ref_id IS NOT NULL
+    THEN RAISE(ABORT, 'manual position occurrence must not set source_ref_id')
+    WHEN NEW.source_kind = 'manual' AND NEW.game_id IS NOT NULL
+    THEN RAISE(ABORT, 'manual position occurrence must not set game_id')
+  END;
+END;
+
+-- @spec CRP-001
+-- @spec CRP-003
+-- @spec CRP-004
+-- @spec CRP-007
+-- @spec CRP-009
+-- @spec CRP-010
+-- @spec CRP-011
+CREATE TRIGGER position_occurrences_validate_update_context
+BEFORE UPDATE ON position_occurrences
+FOR EACH ROW
+BEGIN
+  SELECT CASE
+    WHEN NEW.source_kind = 'game' AND NEW.source_ref_id IS NULL
+    THEN RAISE(ABORT, 'game position occurrence requires source_ref_id')
+    WHEN NEW.source_kind = 'game' AND NEW.game_id IS NULL
+    THEN RAISE(ABORT, 'game position occurrence requires game_id')
+    WHEN NEW.source_kind = 'game' AND NEW.source_ref_id != NEW.game_id
+    THEN RAISE(ABORT, 'game position occurrence source_ref_id must match game_id')
+    WHEN NEW.source_kind = 'game'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM games
+        WHERE id = NEW.game_id
+      )
+    THEN RAISE(ABORT, 'game position occurrence references unknown game')
+    WHEN NEW.source_kind = 'book' AND NEW.source_ref_id IS NULL
+    THEN RAISE(ABORT, 'book position occurrence requires source_ref_id')
+    WHEN NEW.source_kind = 'book' AND NEW.game_id IS NOT NULL
+    THEN RAISE(ABORT, 'book position occurrence must not set game_id')
+    WHEN NEW.source_kind = 'book'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM book_chunks
+        WHERE id = NEW.source_ref_id
+      )
+    THEN RAISE(ABORT, 'book position occurrence references unknown book chunk')
+    WHEN NEW.source_kind = 'puzzle' AND NEW.source_ref_id IS NULL
+    THEN RAISE(ABORT, 'puzzle position occurrence requires source_ref_id')
+    WHEN NEW.source_kind = 'puzzle' AND NEW.game_id IS NOT NULL
+    THEN RAISE(ABORT, 'puzzle position occurrence must not set game_id')
+    WHEN NEW.source_kind = 'puzzle'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM puzzles
+        WHERE id = NEW.source_ref_id
+      )
+    THEN RAISE(ABORT, 'puzzle position occurrence references unknown puzzle')
+    WHEN NEW.source_kind = 'manual' AND NEW.source_ref_id IS NOT NULL
+    THEN RAISE(ABORT, 'manual position occurrence must not set source_ref_id')
+    WHEN NEW.source_kind = 'manual' AND NEW.game_id IS NOT NULL
+    THEN RAISE(ABORT, 'manual position occurrence must not set game_id')
+  END;
+END;
+
 -- @spec PZL-005
 -- @spec PZL-006
 -- @spec CRP-006
@@ -272,4 +413,166 @@ BEGIN
     NULL,
     1
   );
+END;
+
+-- @spec ING-009
+-- @spec CRP-015
+-- @spec CRP-016
+-- @spec CRP-017
+-- @spec CRP-018
+-- @spec CRP-019
+-- @spec CRP-020
+-- @spec CRP-021
+-- @spec CRP-022
+CREATE TABLE move_records (
+  id INTEGER PRIMARY KEY,
+  game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE RESTRICT,
+  from_position_occurrence_id INTEGER NOT NULL REFERENCES position_occurrences(id) ON DELETE RESTRICT,
+  to_position_occurrence_id INTEGER NOT NULL REFERENCES position_occurrences(id) ON DELETE RESTRICT,
+  ply_index INTEGER NOT NULL CHECK (ply_index > 0),
+  move_number INTEGER NOT NULL CHECK (move_number > 0),
+  side TEXT NOT NULL CHECK (side IN ('w', 'b')),
+  san TEXT NOT NULL CHECK (trim(san) <> ''),
+  uci TEXT NOT NULL CHECK (trim(uci) <> ''),
+  piece TEXT NOT NULL CHECK (piece IN ('P', 'N', 'B', 'R', 'Q', 'K')),
+  from_square TEXT NOT NULL CHECK (
+    length(from_square) = 2
+    AND substr(from_square, 1, 1) BETWEEN 'a' AND 'h'
+    AND substr(from_square, 2, 1) BETWEEN '1' AND '8'
+  ),
+  to_square TEXT NOT NULL CHECK (
+    length(to_square) = 2
+    AND substr(to_square, 1, 1) BETWEEN 'a' AND 'h'
+    AND substr(to_square, 2, 1) BETWEEN '1' AND '8'
+  ),
+  is_capture INTEGER NOT NULL CHECK (is_capture IN (0, 1)),
+  is_check INTEGER NOT NULL CHECK (is_check IN (0, 1)),
+  is_checkmate INTEGER NOT NULL CHECK (is_checkmate IN (0, 1)),
+  promotion_piece TEXT CHECK (promotion_piece IS NULL OR promotion_piece IN ('N', 'B', 'R', 'Q')),
+  nag TEXT,
+  comment_text TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CHECK (length(uci) IN (4, 5)),
+  CHECK (substr(uci, 1, 2) = from_square),
+  CHECK (substr(uci, 3, 2) = to_square),
+  CHECK (
+    (length(uci) = 4 AND promotion_piece IS NULL)
+    OR (length(uci) = 5 AND promotion_piece IS NOT NULL AND lower(substr(uci, 5, 1)) = lower(promotion_piece))
+  ),
+  CHECK (nag IS NULL OR trim(nag) <> ''),
+  CHECK (comment_text IS NULL OR trim(comment_text) <> '')
+);
+
+CREATE UNIQUE INDEX move_records_game_ply_unique
+ON move_records (game_id, ply_index);
+
+CREATE INDEX move_records_game_move_number_idx
+ON move_records (game_id, move_number, ply_index);
+
+-- @spec CRP-016
+-- @spec CRP-017
+-- @spec CRP-018
+-- @spec CRP-021
+-- @spec CRP-022
+CREATE TRIGGER move_records_validate_insert_links
+BEFORE INSERT ON move_records
+FOR EACH ROW
+BEGIN
+  SELECT CASE
+    WHEN NOT EXISTS (
+      SELECT 1
+      FROM games
+      WHERE id = NEW.game_id
+    )
+    THEN RAISE(ABORT, 'move record references unknown game')
+    WHEN NOT EXISTS (
+      SELECT 1
+      FROM position_occurrences
+      WHERE id = NEW.from_position_occurrence_id
+        AND game_id = NEW.game_id
+        AND source_kind = 'game'
+    )
+    THEN RAISE(ABORT, 'move record from_position_occurrence_id must reference a game position in the same game')
+    WHEN NOT EXISTS (
+      SELECT 1
+      FROM position_occurrences
+      WHERE id = NEW.to_position_occurrence_id
+        AND game_id = NEW.game_id
+        AND source_kind = 'game'
+    )
+    THEN RAISE(ABORT, 'move record to_position_occurrence_id must reference a game position in the same game')
+    WHEN NEW.from_position_occurrence_id = NEW.to_position_occurrence_id
+    THEN RAISE(ABORT, 'move record must change position')
+    WHEN NOT EXISTS (
+      SELECT 1
+      FROM position_occurrences AS from_pos
+      JOIN position_occurrences AS to_pos
+        ON to_pos.id = NEW.to_position_occurrence_id
+      WHERE from_pos.id = NEW.from_position_occurrence_id
+        AND from_pos.game_id = NEW.game_id
+        AND to_pos.game_id = NEW.game_id
+        AND from_pos.ply_index = NEW.ply_index - 1
+        AND to_pos.ply_index = NEW.ply_index
+    )
+    THEN RAISE(ABORT, 'move record must link consecutive game positions for its ply_index')
+    WHEN (
+      (NEW.side = 'w' AND (NEW.ply_index % 2) != 1)
+      OR (NEW.side = 'b' AND (NEW.ply_index % 2) != 0)
+    )
+    THEN RAISE(ABORT, 'move record side must match ply parity')
+  END;
+END;
+
+-- @spec CRP-016
+-- @spec CRP-017
+-- @spec CRP-018
+-- @spec CRP-021
+-- @spec CRP-022
+CREATE TRIGGER move_records_validate_update_links
+BEFORE UPDATE ON move_records
+FOR EACH ROW
+BEGIN
+  SELECT CASE
+    WHEN NOT EXISTS (
+      SELECT 1
+      FROM games
+      WHERE id = NEW.game_id
+    )
+    THEN RAISE(ABORT, 'move record references unknown game')
+    WHEN NOT EXISTS (
+      SELECT 1
+      FROM position_occurrences
+      WHERE id = NEW.from_position_occurrence_id
+        AND game_id = NEW.game_id
+        AND source_kind = 'game'
+    )
+    THEN RAISE(ABORT, 'move record from_position_occurrence_id must reference a game position in the same game')
+    WHEN NOT EXISTS (
+      SELECT 1
+      FROM position_occurrences
+      WHERE id = NEW.to_position_occurrence_id
+        AND game_id = NEW.game_id
+        AND source_kind = 'game'
+    )
+    THEN RAISE(ABORT, 'move record to_position_occurrence_id must reference a game position in the same game')
+    WHEN NEW.from_position_occurrence_id = NEW.to_position_occurrence_id
+    THEN RAISE(ABORT, 'move record must change position')
+    WHEN NOT EXISTS (
+      SELECT 1
+      FROM position_occurrences AS from_pos
+      JOIN position_occurrences AS to_pos
+        ON to_pos.id = NEW.to_position_occurrence_id
+      WHERE from_pos.id = NEW.from_position_occurrence_id
+        AND from_pos.game_id = NEW.game_id
+        AND to_pos.game_id = NEW.game_id
+        AND from_pos.ply_index = NEW.ply_index - 1
+        AND to_pos.ply_index = NEW.ply_index
+    )
+    THEN RAISE(ABORT, 'move record must link consecutive game positions for its ply_index')
+    WHEN (
+      (NEW.side = 'w' AND (NEW.ply_index % 2) != 1)
+      OR (NEW.side = 'b' AND (NEW.ply_index % 2) != 0)
+    )
+    THEN RAISE(ABORT, 'move record side must match ply parity')
+  END;
 END;
