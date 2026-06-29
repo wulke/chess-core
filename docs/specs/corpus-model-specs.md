@@ -35,7 +35,7 @@
 | CRP-031 | WHEN a variation or plan has durable study value THE SYSTEM SHALL allow it to be promoted into a reusable `StudyLine`. | [ ] → #12 |
 | CRP-032 | WHEN a `StudyLine` is stored THE SYSTEM SHALL preserve `title`, `root_fen`, `canonical_line_uci`, `line_purpose`, `status`, nullable `summary`, and `updated_at` as core study-line fields, where `line_purpose` is one of (`opening-reference`, `middlegame-plan`, `tactical-motif`, `endgame-technique`, `defensive-resource`, `refutation`, `calculation-pattern`, `mistake-pattern`, `memorize`, `review-later`) and `status` is one of (`active`, `archived`). | [ ] → #12 |
 | CRP-033 | WHEN a `StudyLine` is promoted from a specific analysis session THE SYSTEM SHALL allow `origin_analysis_session_id` to reference that source session. | [ ] → #12 |
-| CRP-034 | WHEN a book excerpt is imported THE SYSTEM SHALL represent it as a `BookChunk` with non-null `text`, stable `chunk_index`, and nullable citation fields for metadata that is unavailable from the source. | [ ] → #5 |
+| CRP-034 | WHEN a book excerpt is imported THE SYSTEM SHALL represent it as a `BookChunk` with non-null `text`, stable `chunk_index`, and nullable citation fields for metadata that is unavailable from the source. | [x] → #5 |
 | CRP-035 | WHEN a book excerpt is linked to chess meaning THE SYSTEM SHALL represent the link as a `BookAnchor` without mutating the source `BookChunk`. | [ ] → #8 |
 | CRP-036 | WHEN a `BookAnchor` is stored THE SYSTEM SHALL preserve `anchor_kind` from the approved enum set (`example`, `discussion`, `diagram`, `exercise`, `reference`) for anchor semantics. | [ ] → #8 |
 | CRP-037 | WHEN a `BookAnchor` target is chosen in v1 THE SYSTEM SHALL exclude `move_record` from supported target types. | [ ] → #8 |
