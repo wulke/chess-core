@@ -151,8 +151,11 @@ This LLD defines the canonical entity boundaries for the `chess-core` study corp
     - `ended_at` nullable
     - `created_at`
   - Notes:
+    - `root_position_occurrence_id` must reference an existing `PositionOccurrence` and is the only required study-context pointer for every session kind in v1.
+    - an `AnalysisSession` capture is valid only when at least one `AnalysisNode` is persisted with it; zero-node session submissions are rejected in v1.
     - `puzzle-review` sessions recover puzzle provenance through the root `PositionOccurrence` chain where the root `PositionOccurrence.source_kind = 'puzzle'` and `PositionOccurrence.source_ref_id = Puzzle.id`.
     - a direct `puzzle_id` field is not required in v1 because the root occurrence is the canonical context link for all session kinds.
+    - `started_at` records when the review episode begins; `ended_at` remains null while the session is open. The explicit session-close workflow is out of scope for Issue `#10` and will be specified in a follow-up issue before any close-specific automation is added.
 
 - **AnalysisNode**
   - Purpose: Represent one step in a variation tree inside an `AnalysisSession`.
@@ -172,9 +175,14 @@ This LLD defines the canonical entity boundaries for the `chess-core` study corp
     - `created_at`
   - Notes:
     - `parent_node_id = null` means the node is a first-ply branch from the root position.
-    - child ordering is explicit via `branch_order`.
-    - `node_index` is a stable per-session insertion-order index for uniquely identifying nodes independent of tree depth.
+    - `parent_node_id` must reference another `AnalysisNode` in the same `AnalysisSession` when non-null.
+    - child ordering is explicit via `branch_order`, which is zero-based within one sibling set and must be unique among nodes that share the same `analysis_session_id` plus `parent_node_id`.
+    - v1 schema work for Issue `#10` must enforce `branch_order` uniqueness at the database layer, including root-level siblings where `parent_node_id` is null; implementations must not rely on a plain SQLite unique index over nullable columns to enforce this invariant.
+    - `node_index` is a stable per-session identifier for uniquely identifying nodes independent of tree depth; it is zero-based, unique per `AnalysisSession`, and must not be reassigned after insert.
+    - `node_index` is caller-supplied in v1 so one atomic tree submission can preserve deterministic numbering across retries or workflow replays instead of deriving indices implicitly from physical insert order.
+    - `ply_depth` is the count of plies from the root `PositionOccurrence`; first-ply branches from the root use `ply_depth = 1`, and each child node increments depth by exactly one from its parent.
     - `root_position_occurrence_id` is denormalized from the owning session for fast join-free lookup from a node back to the root study position.
+    - `root_position_occurrence_id` on every node must equal the owning `AnalysisSession.root_position_occurrence_id`; callers must not create mixed-root trees inside one session.
 
 - **StudyLine**
   - Purpose: Represent a reusable line, plan, refutation, or pattern worth preserving outside a single analysis session.
@@ -271,6 +279,11 @@ This LLD defines the canonical entity boundaries for the `chess-core` study corp
    - puzzle imports create `Puzzle` rows and root `PositionOccurrence` rows.
 3. When a position is reviewed, create an `AnalysisSession` rooted at a `PositionOccurrence`.
 4. Store explored branches as `AnalysisNode` rows linked by `parent_node_id`.
+   - reject zero-node submissions before any canonical rows are committed
+   - accept caller-supplied `node_index` values and preserve them unchanged within the session
+   - assign `branch_order` within each sibling set in the order the caller wants branches presented
+   - set `ply_depth = 1` for root children and `parent.ply_depth + 1` for descendants
+   - copy `AnalysisSession.root_position_occurrence_id` onto every node in the session
 5. Promote durable variations or plans into `StudyLine` rows when they have long-term value.
 6. Link study text to chess objects through append-only `BookAnchor` rows while leaving the source `BookChunk` unchanged.
 7. Allow one workflow submission to create several `BookAnchor` rows for the same `BookChunk`.
@@ -282,6 +295,10 @@ This LLD defines the canonical entity boundaries for the `chess-core` study corp
 - PGN comments exist on individual moves -> preserve them on `MoveRecord.comment_text` as imported provenance in v1, and any later annotation attach workflow must not rewrite, clear, or auto-create duplicate `Annotation` rows from that imported comment text.
 - One book chunk refers to several positions -> create multiple `BookAnchor` rows from one `BookChunk`.
 - One analysis session branches heavily -> preserve tree shape through `parent_node_id` and `branch_order`; do not flatten into one line string.
+- A session is still in progress when persistence happens -> keep `ended_at` null until the workflow explicitly closes the session.
+- A caller submits nodes out of sibling display order -> persist the caller-selected order explicitly in `branch_order` instead of inferring order from insert time alone.
+- A caller retries the same logical tree submission -> preserve caller-supplied `node_index` values so node identity remains stable across replay.
+- Root-level sibling nodes share `parent_node_id = null` -> enforce `branch_order` uniqueness with a database strategy that handles nullable parent keys correctly rather than relying on SQLite's default null-distinct unique semantics.
 - A line becomes durable knowledge after analysis -> create a `StudyLine` instead of overloading `AnalysisNode`.
 - An LLM or engine produces structured output -> store human-readable text in `body` and machine-friendly fields in `payload_json`.
 - An annotation attach workflow is retried after a partial upstream failure -> accept append-only duplicates at the schema layer and require the caller to supply any idempotency policy above the canonical store.

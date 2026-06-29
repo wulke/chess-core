@@ -23,7 +23,7 @@
 | ING-019 | WHEN a failed book/document import is retried THE SYSTEM SHALL reuse the existing failed `SourceDocument`, reset `import_status` to `pending`, and rerun the chunk batch as a whole. | [x] → #5 |
 | ING-020 | WHEN a user links imported source text to one or more supported corpus targets after ingestion THE SYSTEM SHALL persist one `BookAnchor` per selected target and SHALL allow multiple targets per source chunk. | [ ] → #8 |
 | ING-021 | WHEN an external LLM response is attached as freeform commentary THE SYSTEM SHALL persist it as an append-only `Annotation` without mutating imported source records directly. | [x] → #11 |
-| ING-022 | WHEN an external LLM response contains structured candidate-line exploration THE SYSTEM SHALL allow ingestion as `AnalysisSession` plus `AnalysisNode` records. | [ ] → #13 |
+| ING-022 | WHEN an external LLM response contains structured candidate-line exploration THE SYSTEM SHALL allow ingestion as an atomic `AnalysisSession` plus `AnalysisNode` tree rooted at a chosen `PositionOccurrence`. | [ ] → #13 |
 | ING-023 | WHEN a file-backed v1 ingestion workflow commits its canonical `sqlite` import-unit writes and transitions `SourceDocument.import_status` to `complete` THE SYSTEM SHALL consider ingestion successful even if an analytics projection layer such as `duckdb` is absent. | [x] → #14 |
 | ING-024 | WHEN one manual-linking submission contains several selected targets THE SYSTEM SHALL commit all requested `BookAnchor` rows atomically or roll them all back together. | [ ] → #8 |
 | ING-025 | WHEN a manual-linking submission references a `BookChunk` that does not exist THE SYSTEM SHALL reject the submission without persisting any `BookAnchor` rows. | [ ] → #8 |

@@ -146,6 +146,10 @@ must make.
     - LLM-authored line exploration is stored as a first-class analysis tree when it represents structured candidate-line output
     - freeform commentary may still be attached only as `Annotation` when no line structure is present
     - LLM-generated sessions do not mutate imported source records directly
+    - one review-capture submission is atomic for `AnalysisSession` plus `AnalysisNode` persistence; if any node fails validation, the workflow must not leave behind a partial tree
+    - zero-node review captures are invalid in v1; the workflow must reject them instead of persisting an empty `AnalysisSession`
+    - every persisted node reuses the chosen root `PositionOccurrence` through `root_position_occurrence_id` so later lookup back to the studied position does not require joining through the session row first
+    - v1 review capture accepts caller-supplied `node_index` values so deterministic node identity can survive retry or replay of the same logical tree
 
 ## Logic Flow
 
@@ -164,6 +168,11 @@ must make.
      - validate each selected target against the currently implemented target tables for this workflow
      - insert one `BookAnchor` row per validated target in the same user action
    - analysis sessions
+     - validate the chosen root `PositionOccurrence`
+     - validate that at least one candidate-line node is present
+     - insert the `AnalysisSession`
+     - insert the `AnalysisNode` tree in one transaction with caller-supplied per-session `node_index`, per-sibling `branch_order`, and depth-consistent `ply_depth`
+     - enforce sibling `branch_order` uniqueness at the canonical-store layer, including the root-level sibling set where `parent_node_id` is null
    - study line creation
    - annotations
 5. Defer any future analytical projections until the canonical store is stable and query needs justify them.
@@ -180,5 +189,8 @@ must make.
 - A puzzle dataset contains no valid rows -> keep the `SourceDocument` for provenance and mark the import `failed`.
 - A manual puzzle is entered twice -> treat matching `external_puzzle_id` when present, otherwise matching `fen` + `source_provider`, as a duplicate and do not create a second canonical puzzle row.
 - A downstream tool wants extra local tables -> allow tool-local caches, but they must not redefine canonical entities owned by `chess-core`.
+- One candidate line node references a parent from another session -> reject the workflow instead of allowing cross-session tree edges.
+- A review capture arrives without any nodes -> reject the submission instead of creating an empty `AnalysisSession`.
+- One candidate line tree write fails after the session row is inserted -> roll back the full analysis-session capture so the canonical store does not retain an orphaned or partial review tree.
 - A user never installs `duckdb` -> all v1 ingestion and study flows still work.
 - A future analytics projection disagrees with `sqlite` -> `sqlite` remains the source of truth and the projection must be rebuilt.

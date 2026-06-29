@@ -583,6 +583,192 @@ BEGIN
   END;
 END;
 
+-- @spec CRP-023
+-- @spec CRP-024
+-- @spec CRP-025
+-- @spec PZL-007
+CREATE TABLE analysis_sessions (
+  id INTEGER PRIMARY KEY,
+  root_position_occurrence_id INTEGER NOT NULL REFERENCES position_occurrences(id) ON DELETE RESTRICT,
+  author_type TEXT NOT NULL CHECK (
+    author_type IN ('user', 'llm', 'engine', 'import')
+  ),
+  session_kind TEXT NOT NULL CHECK (
+    session_kind IN ('postgame', 'book-review', 'opening-study', 'puzzle-review', 'manual')
+  ),
+  title TEXT NOT NULL CHECK (trim(title) <> ''),
+  started_at TEXT NOT NULL CHECK (trim(started_at) <> ''),
+  ended_at TEXT CHECK (ended_at IS NULL OR trim(ended_at) <> ''),
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX analysis_sessions_root_position_idx
+ON analysis_sessions (root_position_occurrence_id, session_kind);
+
+-- @spec CRP-026
+-- @spec CRP-026a
+-- @spec CRP-026b
+-- @spec CRP-027
+-- @spec CRP-028
+-- @spec CRP-029
+-- @spec CRP-029a
+-- @spec CRP-030
+CREATE TABLE analysis_nodes (
+  id INTEGER PRIMARY KEY,
+  analysis_session_id INTEGER NOT NULL REFERENCES analysis_sessions(id) ON DELETE RESTRICT,
+  parent_node_id INTEGER REFERENCES analysis_nodes(id) ON DELETE RESTRICT,
+  root_position_occurrence_id INTEGER NOT NULL REFERENCES position_occurrences(id) ON DELETE RESTRICT,
+  node_index INTEGER NOT NULL CHECK (node_index >= 0),
+  ply_depth INTEGER NOT NULL CHECK (ply_depth > 0),
+  branch_order INTEGER NOT NULL CHECK (branch_order >= 0),
+  move_san TEXT NOT NULL CHECK (trim(move_san) <> ''),
+  move_uci TEXT NOT NULL CHECK (trim(move_uci) <> ''),
+  fen_after TEXT NOT NULL CHECK (trim(fen_after) <> ''),
+  position_hash_after TEXT NOT NULL CHECK (trim(position_hash_after) <> ''),
+  user_note TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CHECK (length(move_uci) IN (4, 5)),
+  CHECK (user_note IS NULL OR trim(user_note) <> '')
+);
+
+CREATE UNIQUE INDEX analysis_nodes_session_node_index_unique
+ON analysis_nodes (analysis_session_id, node_index);
+
+CREATE UNIQUE INDEX analysis_nodes_root_sibling_branch_order_unique
+ON analysis_nodes (analysis_session_id, branch_order)
+WHERE parent_node_id IS NULL;
+
+CREATE UNIQUE INDEX analysis_nodes_child_sibling_branch_order_unique
+ON analysis_nodes (analysis_session_id, parent_node_id, branch_order)
+WHERE parent_node_id IS NOT NULL;
+
+CREATE INDEX analysis_nodes_session_parent_idx
+ON analysis_nodes (analysis_session_id, parent_node_id, node_index);
+
+CREATE INDEX analysis_nodes_root_position_idx
+ON analysis_nodes (root_position_occurrence_id, analysis_session_id);
+
+-- @spec CRP-026b
+-- @spec CRP-029
+-- @spec CRP-029a
+-- @spec CRP-030
+-- SQLite cannot share one trigger body across INSERT and UPDATE events, so any
+-- validation change here must be mirrored in analysis_nodes_validate_update_tree.
+CREATE TRIGGER analysis_nodes_validate_insert_tree
+BEFORE INSERT ON analysis_nodes
+FOR EACH ROW
+BEGIN
+  SELECT CASE
+    WHEN NOT EXISTS (
+      SELECT 1
+      FROM analysis_sessions
+      WHERE id = NEW.analysis_session_id
+    )
+    THEN RAISE(ROLLBACK, 'analysis node references unknown session')
+    WHEN NOT EXISTS (
+      SELECT 1
+      FROM position_occurrences
+      WHERE id = NEW.root_position_occurrence_id
+    )
+    THEN RAISE(ROLLBACK, 'analysis node references unknown root position occurrence')
+    WHEN NOT EXISTS (
+      SELECT 1
+      FROM analysis_sessions
+      WHERE id = NEW.analysis_session_id
+        AND root_position_occurrence_id = NEW.root_position_occurrence_id
+    )
+    THEN RAISE(ROLLBACK, 'analysis node root_position_occurrence_id must match the owning session root')
+    WHEN NEW.parent_node_id IS NULL
+      AND NEW.ply_depth != 1
+    THEN RAISE(ROLLBACK, 'root analysis branches must use ply_depth = 1')
+    WHEN NEW.parent_node_id IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1
+        FROM analysis_nodes
+        WHERE id = NEW.parent_node_id
+          AND analysis_session_id = NEW.analysis_session_id
+      )
+    THEN RAISE(ROLLBACK, 'analysis node parent must belong to the same session')
+    WHEN NEW.parent_node_id IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1
+        FROM analysis_nodes
+        WHERE id = NEW.parent_node_id
+          AND analysis_session_id = NEW.analysis_session_id
+          AND ply_depth = NEW.ply_depth - 1
+      )
+    THEN RAISE(ROLLBACK, 'analysis node child ply_depth must be exactly one greater than its parent')
+    WHEN NEW.parent_node_id IS NOT NULL
+      AND EXISTS (
+        SELECT 1
+        FROM analysis_nodes
+        WHERE id = NEW.parent_node_id
+          AND root_position_occurrence_id != NEW.root_position_occurrence_id
+      )
+    THEN RAISE(ROLLBACK, 'analysis node root_position_occurrence_id must match its parent branch root')
+  END;
+END;
+
+-- @spec CRP-026b
+-- @spec CRP-029
+-- @spec CRP-029a
+-- @spec CRP-030
+-- Keep this logic aligned with analysis_nodes_validate_insert_tree.
+CREATE TRIGGER analysis_nodes_validate_update_tree
+BEFORE UPDATE ON analysis_nodes
+FOR EACH ROW
+BEGIN
+  SELECT CASE
+    WHEN NOT EXISTS (
+      SELECT 1
+      FROM analysis_sessions
+      WHERE id = NEW.analysis_session_id
+    )
+    THEN RAISE(ROLLBACK, 'analysis node references unknown session')
+    WHEN NOT EXISTS (
+      SELECT 1
+      FROM position_occurrences
+      WHERE id = NEW.root_position_occurrence_id
+    )
+    THEN RAISE(ROLLBACK, 'analysis node references unknown root position occurrence')
+    WHEN NOT EXISTS (
+      SELECT 1
+      FROM analysis_sessions
+      WHERE id = NEW.analysis_session_id
+        AND root_position_occurrence_id = NEW.root_position_occurrence_id
+    )
+    THEN RAISE(ROLLBACK, 'analysis node root_position_occurrence_id must match the owning session root')
+    WHEN NEW.parent_node_id IS NULL
+      AND NEW.ply_depth != 1
+    THEN RAISE(ROLLBACK, 'root analysis branches must use ply_depth = 1')
+    WHEN NEW.parent_node_id IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1
+        FROM analysis_nodes
+        WHERE id = NEW.parent_node_id
+          AND analysis_session_id = NEW.analysis_session_id
+      )
+    THEN RAISE(ROLLBACK, 'analysis node parent must belong to the same session')
+    WHEN NEW.parent_node_id IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1
+        FROM analysis_nodes
+        WHERE id = NEW.parent_node_id
+          AND analysis_session_id = NEW.analysis_session_id
+          AND ply_depth = NEW.ply_depth - 1
+      )
+    THEN RAISE(ROLLBACK, 'analysis node child ply_depth must be exactly one greater than its parent')
+    WHEN NEW.parent_node_id IS NOT NULL
+      AND EXISTS (
+        SELECT 1
+        FROM analysis_nodes
+        WHERE id = NEW.parent_node_id
+          AND root_position_occurrence_id != NEW.root_position_occurrence_id
+      )
+    THEN RAISE(ROLLBACK, 'analysis node root_position_occurrence_id must match its parent branch root')
+  END;
+END;
+
 -- @spec CRP-038
 -- @spec CRP-039
 -- @spec CRP-040
