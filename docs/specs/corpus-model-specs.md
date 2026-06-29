@@ -48,6 +48,6 @@
 | CRP-044 | WHEN a `Puzzle` is stored THE SYSTEM SHALL preserve `source_provider` from the approved enum set (`lichess`, `manual`, `import`). | [x] → #6 |
 | CRP-045 | WHEN a `Puzzle.external_puzzle_id` is non-null THE SYSTEM SHALL enforce uniqueness for that identifier. | [x] → #6 |
 | CRP-046 | WHEN a `Puzzle.external_puzzle_id` is null THE SYSTEM SHALL treat (`source_provider`, `fen`) as the fallback uniqueness basis. | [x] → #6 |
-| CRP-047 | WHEN a `SourceDocument` is stored THE SYSTEM SHALL track `import_status` as `pending`, `complete`, or `failed`. | [ ] → #3 |
-| CRP-048 | WHEN a `SourceDocument.import_status` is not `complete` THE SYSTEM SHALL allow `imported_at` to remain null. | [ ] → #3 |
-| CRP-049 | WHEN a `SourceDocument.import_status` transitions to `complete` THE SYSTEM SHALL populate `imported_at` with the successful completion timestamp. | [ ] → #3 |
+| CRP-047 | WHEN a `SourceDocument` is stored THE SYSTEM SHALL track `import_status` as `pending`, `complete`, or `failed`. | [x] → #3 |
+| CRP-048 | WHEN a `SourceDocument.import_status` is not `complete` THE SYSTEM SHALL allow `imported_at` to remain null. | [x] → #3 |
+| CRP-049 | WHEN a `SourceDocument.import_status` transitions to `complete` THE SYSTEM SHALL populate `imported_at` with the successful completion timestamp. | [x] → #3 |
