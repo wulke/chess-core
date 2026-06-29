@@ -106,6 +106,7 @@ ON book_anchors (book_chunk_id);
 CREATE INDEX book_anchors_target_lookup_idx
 ON book_anchors (target_type, target_id);
 
+-- @spec ING-025
 -- @spec ING-026
 CREATE TRIGGER book_anchors_validate_insert_target
 BEFORE INSERT ON book_anchors

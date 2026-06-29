@@ -55,6 +55,28 @@ INSERT INTO book_chunks (
   'Imported source text that should remain unchanged after linking.'
 );
 
+INSERT INTO position_occurrences (
+  fen,
+  side_to_move,
+  position_hash,
+  source_kind,
+  source_ref_id,
+  game_id,
+  move_number,
+  ply_index,
+  is_mainline
+) VALUES (
+  '8/8/8/8/8/8/8/K6k w - - 0 1',
+  'w',
+  'book-position-hash-001',
+  'book',
+  1,
+  NULL,
+  NULL,
+  NULL,
+  0
+);
+
 INSERT INTO puzzles (
   source_document_id,
   external_puzzle_id,
