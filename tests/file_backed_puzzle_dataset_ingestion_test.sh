@@ -50,6 +50,7 @@ INSERT INTO puzzles (
 );
 SQL
 
+# This row is malformed because the FEN says white to move while side_to_move = 'b'.
 if sqlite3 "$DB_PATH" 2>/dev/null <<'SQL'
 INSERT INTO puzzles (
   source_document_id,
@@ -184,7 +185,15 @@ INSERT INTO puzzles (
   'w',
   'a1a2 f1f2'
 );
+
+UPDATE source_documents
+SET import_status = 'complete',
+    imported_at = '2026-06-29 13:30:00'
+WHERE id = 2;
 SQL
+
+retry_document_row="$(sqlite3 -tabs "$DB_PATH" "SELECT import_status, imported_at FROM source_documents WHERE id = 2;")"
+[[ "$retry_document_row" == $'complete\t2026-06-29 13:30:00' ]]
 
 retry_puzzle_count="$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM puzzles WHERE source_document_id = 2;")"
 [[ "$retry_puzzle_count" == "1" ]]
@@ -225,10 +234,35 @@ INSERT INTO source_documents (
   'pending'
 );
 
+INSERT INTO puzzles (
+  source_document_id,
+  external_puzzle_id,
+  source_provider,
+  fen,
+  side_to_move,
+  solution_line_uci
+) VALUES (
+  4,
+  'crash-row-001',
+  'import',
+  '8/8/8/8/8/8/8/K3k3 w - - 0 1',
+  'w',
+  'a1a2 e1e2'
+);
+
 UPDATE source_documents
 SET import_status = 'failed'
 WHERE id = 4;
 SQL
 
-failed_statuses="$(sqlite3 -tabs "$DB_PATH" "SELECT id, import_status FROM source_documents WHERE id IN (3, 4) ORDER BY id;")"
-[[ "$failed_statuses" == $'3\tfailed\n4\tfailed' ]]
+empty_dataset_row="$(sqlite3 -tabs "$DB_PATH" "SELECT import_status, imported_at IS NULL FROM source_documents WHERE id = 3;")"
+[[ "$empty_dataset_row" == $'failed\t1' ]]
+
+empty_dataset_puzzle_count="$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM puzzles WHERE source_document_id = 3;")"
+[[ "$empty_dataset_puzzle_count" == "0" ]]
+
+crashed_dataset_row="$(sqlite3 -tabs "$DB_PATH" "SELECT import_status, imported_at IS NULL FROM source_documents WHERE id = 4;")"
+[[ "$crashed_dataset_row" == $'failed\t1' ]]
+
+crashed_dataset_puzzle_count="$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM puzzles WHERE source_document_id = 4;")"
+[[ "$crashed_dataset_puzzle_count" == "1" ]]
