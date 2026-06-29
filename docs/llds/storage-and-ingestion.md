@@ -19,6 +19,7 @@ must make.
   - Puzzle dataset ingestion treats each dataset row as its own import unit; one malformed row must not roll back previously committed valid puzzle rows from the same file.
   - Puzzle dataset retries resume under the existing `failed` `SourceDocument`, reset `import_status` to `pending`, and skip already committed puzzle rows using `external_puzzle_id` when present or (`source_provider`, `fen`) otherwise.
   - v1 file-backed ingestion completion is reached when the canonical `sqlite` transaction for the import unit commits successfully and `SourceDocument.import_status` transitions to `complete`.
+  - Manual linking treats one user submission as one canonical import unit; when one `BookChunk` is linked to several targets in the same workflow, all `BookAnchor` rows for that submission commit or roll back together.
   - Derived analytics or projection work, including any future `duckdb` projection, must run outside that file-backed completion boundary and must not block a successful v1 ingestion result.
 
 ### Storage Layers
@@ -113,7 +114,12 @@ must make.
     - optionally `Annotation`
   - Guarantees:
     - linking is allowed after ingestion
+    - linking appends `BookAnchor` rows without mutating the source `BookChunk`
     - a source chunk may link to many targets
+    - one workflow submission may persist multiple `BookAnchor` rows for the same source chunk
+    - one workflow submission is atomic for `BookAnchor` persistence; if any selected target fails validation or insert, no partial anchor set is committed for that submission
+    - `BookAnchor.target_type` is constrained to the approved v1 enum set even if some target entity tables are implemented in later issues
+    - Issue `#8` only requires target-resolution checks for canonical target tables that already exist in the repo at implementation time; later entity issues extend the workflow to their own approved target types without changing the `BookAnchor` contract
 
 - **LLM annotation attach**
   - Input:
@@ -151,6 +157,9 @@ must make.
    - canonical `sqlite` persistence, including the `SourceDocument.import_status` transition to `complete`, is the v1 completion boundary for file-backed ingestion
 4. Allow later enrichment:
    - manual links
+     - validate the selected `BookChunk`
+     - validate each selected target against the currently implemented target tables for this workflow
+     - insert one `BookAnchor` row per validated target in the same user action
    - analysis sessions
    - study line creation
    - annotations
@@ -160,6 +169,9 @@ must make.
 ## Edge Case Probe
 - PGN import fails midway through a file -> keep the `SourceDocument`, set `SourceDocument.import_status = 'failed'`, and avoid partial duplicate `Game` rows on retry.
 - PDF text extraction is noisy -> ingest chunks anyway with citation metadata when available; do not block ingestion on cleanup perfection.
+- A user links one chunk to several already-supported targets -> persist one `BookAnchor` row per target without editing the `BookChunk`.
+- One target in a multi-link submission is invalid -> reject the submission and roll back the full `BookAnchor` set for that user action.
+- A user attempts to link a chunk to a target type outside the approved v1 boundary -> reject the link instead of widening `BookAnchor.target_type`.
 - A puzzle import arrives from a bulk dataset and some rows are malformed -> ingest valid puzzles, surface row-level failures at the workflow layer later, and avoid duplicate puzzle creation on retry.
 - A puzzle dataset retry sees rows that already committed before the earlier failure -> reuse the same failed `SourceDocument` and skip the already committed puzzles using `external_puzzle_id` when present or (`source_provider`, `fen`) otherwise.
 - A puzzle dataset contains no valid rows -> keep the `SourceDocument` for provenance and mark the import `failed`.

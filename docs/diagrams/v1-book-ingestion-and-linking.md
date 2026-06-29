@@ -45,7 +45,7 @@ flowchart LR
 
     User[Human user]:::actor --> Select[Select BookChunk and one or more targets]:::action
     Select --> Anchor[Persist BookAnchor rows]:::action
-    Anchor --> Targets[Target types: PositionOccurrence, StudyLine, Game, Puzzle, AnalysisSession, AnalysisNode]:::optional
+    Anchor --> Targets[Approved target_type boundary: PositionOccurrence, StudyLine, Game, Puzzle, AnalysisSession, AnalysisNode]:::optional
     Anchor --> OptLine[Optionally create or link StudyLine]:::optional
     Anchor --> OptNote[Optionally add Annotation]:::optional
 ```
@@ -54,4 +54,9 @@ flowchart LR
 - Import and linking are intentionally separate stages.
 - `BookChunk` preserves source text; `BookAnchor` adds chess meaning without
   mutating the chunk itself.
+- One manual-linking submission commits all requested `BookAnchor` rows
+  atomically or rolls them all back together.
+- Issue `#8` only needs executable linking for target entity tables that already
+  exist in the canonical schema; later entity issues can activate the remaining
+  approved `target_type` values without changing the `BookAnchor` contract.
 - v1 excludes `move_record` as a direct `BookAnchor` target type.
