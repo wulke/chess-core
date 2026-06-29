@@ -202,7 +202,20 @@ This LLD defines the canonical entity boundaries for the `chess-core` study corp
     - `anchor_kind` (`example`, `discussion`, `diagram`, `exercise`, `reference`)
     - `created_at`
   - Notes:
+    - `BookAnchor` is append-only enrichment metadata and must not update the linked `BookChunk.text` or citation fields.
+    - `target_id` resolves by `target_type` as follows:
+
+      | `target_type` | `target_id` resolves to |
+      |---|---|
+      | `position_occurrence` | `PositionOccurrence.id` |
+      | `study_line` | `StudyLine.id` |
+      | `game` | `Game.id` |
+      | `puzzle` | `Puzzle.id` |
+      | `analysis_session` | `AnalysisSession.id` |
+      | `analysis_node` | `AnalysisNode.id` |
     - `move_record` is intentionally excluded from `target_type` in v1 because book prose is expected to anchor to positions, lines, games, puzzles, or analysis context rather than a single normalized move row.
+    - the `target_type` enum is the approved v1 boundary even when some target entity tables land in later issues; adding a new supported workflow later must reuse this boundary rather than widening it ad hoc
+    - Issue `#8` only requires link creation against target entity tables that already exist in the canonical schema at implementation time; future issues may activate additional approved target types once their owning tables are present
 
 - **Annotation**
   - Purpose: Attach commentary, labels, or evaluations to corpus objects.
@@ -239,8 +252,9 @@ This LLD defines the canonical entity boundaries for the `chess-core` study corp
 3. When a position is reviewed, create an `AnalysisSession` rooted at a `PositionOccurrence`.
 4. Store explored branches as `AnalysisNode` rows linked by `parent_node_id`.
 5. Promote durable variations or plans into `StudyLine` rows when they have long-term value.
-6. Link study text to chess objects through `BookAnchor`.
-7. Attach commentary or derived meaning through `Annotation`.
+6. Link study text to chess objects through append-only `BookAnchor` rows while leaving the source `BookChunk` unchanged.
+7. Allow one workflow submission to create several `BookAnchor` rows for the same `BookChunk`.
+8. Attach commentary or derived meaning through `Annotation`.
 
 ## Edge Case Probe
 - Same FEN appears in many contexts -> store separate `PositionOccurrence` rows and use `position_hash` only for equality/indexing, not identity.

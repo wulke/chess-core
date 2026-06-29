@@ -38,7 +38,7 @@
 | CRP-034 | WHEN a book excerpt is imported THE SYSTEM SHALL represent it as a `BookChunk` with non-null `text`, stable `chunk_index`, and nullable citation fields for metadata that is unavailable from the source. | [x] → #5 |
 | CRP-035 | WHEN a book excerpt is linked to chess meaning THE SYSTEM SHALL represent the link as a `BookAnchor` without mutating the source `BookChunk`. | [ ] → #8 |
 | CRP-036 | WHEN a `BookAnchor` is stored THE SYSTEM SHALL preserve `anchor_kind` from the approved enum set (`example`, `discussion`, `diagram`, `exercise`, `reference`) for anchor semantics. | [ ] → #8 |
-| CRP-037 | WHEN a `BookAnchor` target is chosen in v1 THE SYSTEM SHALL exclude `move_record` from supported target types. | [ ] → #8 |
+| CRP-037 | WHEN a `BookAnchor` target is chosen in v1 THE SYSTEM SHALL preserve `target_type` from the approved enum set (`position_occurrence`, `study_line`, `game`, `puzzle`, `analysis_session`, `analysis_node`) and SHALL exclude `move_record` from supported target types. | [ ] → #8 |
 | CRP-038 | WHEN a note, evaluation, label, or commentary is attached to a corpus object THE SYSTEM SHALL store it as an `Annotation` with target polymorphism across supported entity types. | [ ] → #11 |
 | CRP-039 | WHEN an `Annotation` is stored THE SYSTEM SHALL preserve `author_type` from the approved enum set (`user`, `llm`, `engine`, `import`) to identify who authored the annotation. | [ ] → #11 |
 | CRP-040 | WHEN an `Annotation` is stored THE SYSTEM SHALL preserve `annotation_kind` from the approved enum set (`note`, `commentary`, `evaluation`, `label`, `summary`, `warning`) for annotation semantics. | [ ] → #11 |
@@ -51,3 +51,4 @@
 | CRP-047 | WHEN a `SourceDocument` is stored THE SYSTEM SHALL track `import_status` as `pending`, `complete`, or `failed`. | [x] → #3 |
 | CRP-048 | WHEN a `SourceDocument.import_status` is not `complete` THE SYSTEM SHALL allow `imported_at` to remain null. | [x] → #3 |
 | CRP-049 | WHEN a `SourceDocument.import_status` transitions to `complete` THE SYSTEM SHALL populate `imported_at` with the successful completion timestamp. | [x] → #3 |
+| CRP-050 | WHEN a `BookAnchor` is stored THE SYSTEM SHALL preserve `target_id` as the identifier of the record selected by `target_type`. | [ ] → #8 |

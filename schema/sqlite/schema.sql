@@ -72,6 +72,71 @@ ON book_chunks (source_document_id, chunk_index);
 CREATE INDEX book_chunks_source_document_idx
 ON book_chunks (source_document_id);
 
+-- @spec ING-020
+-- @spec ING-024
+-- @spec ING-025
+-- @spec ING-026
+-- @spec CRP-035
+-- @spec CRP-036
+-- @spec CRP-037
+-- @spec CRP-050
+CREATE TABLE book_anchors (
+  id INTEGER PRIMARY KEY,
+  book_chunk_id INTEGER NOT NULL REFERENCES book_chunks(id) ON DELETE RESTRICT,
+  target_type TEXT NOT NULL CHECK (
+    target_type IN (
+      'position_occurrence',
+      'study_line',
+      'game',
+      'puzzle',
+      'analysis_session',
+      'analysis_node'
+    )
+  ),
+  target_id INTEGER NOT NULL CHECK (target_id > 0),
+  anchor_kind TEXT NOT NULL CHECK (
+    anchor_kind IN ('example', 'discussion', 'diagram', 'exercise', 'reference')
+  ),
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX book_anchors_book_chunk_idx
+ON book_anchors (book_chunk_id);
+
+CREATE INDEX book_anchors_target_lookup_idx
+ON book_anchors (target_type, target_id);
+
+-- @spec ING-026
+CREATE TRIGGER book_anchors_validate_insert_target
+BEFORE INSERT ON book_anchors
+FOR EACH ROW
+BEGIN
+  SELECT CASE
+    WHEN NOT EXISTS (
+      SELECT 1
+      FROM book_chunks
+      WHERE id = NEW.book_chunk_id
+    )
+    THEN RAISE(ROLLBACK, 'book anchor source chunk does not exist')
+    WHEN NEW.target_type = 'position_occurrence'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM position_occurrences
+        WHERE id = NEW.target_id
+      )
+    THEN RAISE(ROLLBACK, 'book anchor target does not exist')
+    WHEN NEW.target_type = 'puzzle'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM puzzles
+        WHERE id = NEW.target_id
+      )
+    THEN RAISE(ROLLBACK, 'book anchor target does not exist')
+    WHEN NEW.target_type IN ('study_line', 'game', 'analysis_session', 'analysis_node')
+    THEN RAISE(ROLLBACK, 'book anchor target type is not yet linkable in v1 schema')
+  END;
+END;
+
 -- @spec PZL-001
 -- @spec PZL-002
 -- @spec PZL-003
