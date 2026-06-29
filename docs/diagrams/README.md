@@ -36,4 +36,4 @@ companions, not normative sources.
    - backed by storage/ingestion LLD, corpus model LLD, `ING-015` through `ING-020`, and `CRP-034` through `CRP-037`
 5. [v1-puzzle-and-analysis-flows.md](/Users/trevorwulke/workspace/chess-core/docs/diagrams/v1-puzzle-and-analysis-flows.md)
    - puzzle import/manual entry, root puzzle context, LLM annotation attach, and LLM analysis session flows
-   - backed by storage/ingestion LLD, corpus model LLD, `ING-021` through `ING-023`, and `PZL-001` through `PZL-012`
+   - backed by storage/ingestion LLD, corpus model LLD, `ING-021` through `ING-023`, and `PZL-001` through `PZL-017`

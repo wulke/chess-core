@@ -16,6 +16,8 @@ must make.
   - PGN imports use per-game deduplication via `Game.external_game_key` so a retry may skip already committed games within the same `SourceDocument` and continue importing the remaining games.
   - On retry after failure, `chess-core` resumes under the existing `failed` `SourceDocument` matched by `content_hash` instead of creating a new `SourceDocument` row.
   - Book/document ingestion retries also resume under the existing `failed` `SourceDocument` matched by `content_hash`; chunk extraction is treated as one transactional batch, so failed batches are rolled back and the full batch is re-attempted on retry.
+  - Puzzle dataset ingestion treats each dataset row as its own import unit; one malformed row must not roll back previously committed valid puzzle rows from the same file.
+  - Puzzle dataset retries resume under the existing `failed` `SourceDocument`, reset `import_status` to `pending`, and skip already committed puzzle rows using `external_puzzle_id` when present or (`source_provider`, `fen`) otherwise.
   - v1 file-backed ingestion completion is reached when the canonical `sqlite` transaction for the import unit commits successfully and `SourceDocument.import_status` transitions to `complete`.
   - Derived analytics or projection work, including any future `duckdb` projection, must run outside that file-backed completion boundary and must not block a successful v1 ingestion result.
 
@@ -96,6 +98,10 @@ must make.
     - support both bulk-imported and manually authored puzzles
     - do not require puzzle solution moves to be normalized into `MoveRecord` rows in v1
     - skip duplicate file-backed re-import by default when a `SourceDocument.content_hash` already exists in `complete` state, unless a future explicit overwrite mode is requested
+    - treat each file-backed dataset row as an independent canonical import unit so valid rows may commit even when sibling rows are malformed
+    - reuse the existing `failed` `SourceDocument` on retry, reset `import_status` to `pending`, and skip already committed puzzle rows using `external_puzzle_id` when present or (`source_provider`, `fen`) otherwise
+    - mark a file-backed dataset import `complete` when at least one valid row commits and no import-level failure aborts the workflow; malformed rows are surfaced as row-level failures without reopening committed puzzle rows
+    - mark a file-backed dataset import `failed` when no valid rows commit or when an import-level failure prevents the dataset workflow from finishing
     - prevent duplicate manual puzzle entry in v1 by treating (`source_provider`, `fen`, `external_puzzle_id`) as the deduplication key, where `external_puzzle_id` may be null and `fen` + `source_provider` remains the fallback uniqueness basis
 
 - **Manual linking**
@@ -141,6 +147,7 @@ must make.
    - PDF/text extract -> book chunk ingestion path
    - puzzle dataset or manual puzzle entry -> puzzle ingestion path
 3. Persist canonical relational records into `sqlite`.
+   - puzzle datasets validate and commit each row independently so malformed rows fail at row scope while valid rows still create `Puzzle` plus root `PositionOccurrence` records
    - canonical `sqlite` persistence, including the `SourceDocument.import_status` transition to `complete`, is the v1 completion boundary for file-backed ingestion
 4. Allow later enrichment:
    - manual links
@@ -154,6 +161,8 @@ must make.
 - PGN import fails midway through a file -> keep the `SourceDocument`, set `SourceDocument.import_status = 'failed'`, and avoid partial duplicate `Game` rows on retry.
 - PDF text extraction is noisy -> ingest chunks anyway with citation metadata when available; do not block ingestion on cleanup perfection.
 - A puzzle import arrives from a bulk dataset and some rows are malformed -> ingest valid puzzles, surface row-level failures at the workflow layer later, and avoid duplicate puzzle creation on retry.
+- A puzzle dataset retry sees rows that already committed before the earlier failure -> reuse the same failed `SourceDocument` and skip the already committed puzzles using `external_puzzle_id` when present or (`source_provider`, `fen`) otherwise.
+- A puzzle dataset contains no valid rows -> keep the `SourceDocument` for provenance and mark the import `failed`.
 - A manual puzzle is entered twice -> treat matching `external_puzzle_id` when present, otherwise matching `fen` + `source_provider`, as a duplicate and do not create a second canonical puzzle row.
 - A downstream tool wants extra local tables -> allow tool-local caches, but they must not redefine canonical entities owned by `chess-core`.
 - A user never installs `duckdb` -> all v1 ingestion and study flows still work.

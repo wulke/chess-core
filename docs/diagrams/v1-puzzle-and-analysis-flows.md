@@ -3,7 +3,7 @@
 Backed by:
 - [docs/llds/storage-and-ingestion.md](/Users/trevorwulke/workspace/chess-core/docs/llds/storage-and-ingestion.md)
 - [docs/llds/canonical-corpus-model.md](/Users/trevorwulke/workspace/chess-core/docs/llds/canonical-corpus-model.md)
-- Specs: `PZL-001` through `PZL-012`, `ING-021` through `ING-023`, `CRP-024` through `CRP-046`
+- Specs: `PZL-001` through `PZL-017`, `ING-021` through `ING-023`, `CRP-024` through `CRP-046`
 
 ## Puzzle Intake And Review Context
 
@@ -18,14 +18,16 @@ flowchart TD
     A[Puzzle source arrives] --> B{Manual entry or file-backed dataset?}:::decision
     B -->|Manual| C[Create Puzzle with null source_document_id]:::action
     B -->|File-backed| D[Register SourceDocument and set import_status = pending]:::action
-    D --> E[Validate and persist valid Puzzle rows]:::action
-    E --> F{Malformed rows present?}:::decision
-    F -->|Yes| G[Keep valid rows and surface row-level failures later]:::fail
-    F -->|No| H[Continue normally]:::success
-    G --> I[Create root PositionOccurrence for each valid puzzle]:::action
-    H --> I
-    C --> I
-    I --> J[Puzzle review roots through PositionOccurrence provenance]:::success
+    D --> E[Validate each dataset row and commit each valid row independently]:::action
+    E --> F{Any valid rows committed?}:::decision
+    F -->|No| G[Mark SourceDocument failed and retain provenance]:::fail
+    F -->|Yes| H{Malformed rows present?}:::decision
+    H -->|Yes| I[Keep committed Puzzle rows, skip malformed rows, and surface row-level failures later]:::fail
+    H -->|No| J[Continue normally]:::success
+    I --> L[Set import_status = complete]:::success
+    J --> L
+    C --> M
+    L --> M[Puzzle review roots through PositionOccurrence provenance]:::success
 ```
 
 ## Post-Ingestion Enrichment Swim Lanes
@@ -70,6 +72,9 @@ flowchart LR
 ## Reading Notes
 - Puzzle provenance for review flows through the root `PositionOccurrence`, not a
   direct `puzzle_id` on `AnalysisSession`.
+- File-backed puzzle datasets commit valid rows independently and reuse the same
+  failed `SourceDocument` on retry, skipping already committed puzzles using
+  `external_puzzle_id` when present or (`source_provider`, `fen`) otherwise.
 - Freeform LLM output stays in `Annotation`.
 - Structured line exploration becomes first-class `AnalysisSession` and
   `AnalysisNode` data.
