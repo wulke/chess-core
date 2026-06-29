@@ -16,6 +16,8 @@ must make.
   - PGN imports use per-game deduplication via `Game.external_game_key` so a retry may skip already committed games within the same `SourceDocument` and continue importing the remaining games.
   - On retry after failure, `chess-core` resumes under the existing `failed` `SourceDocument` matched by `content_hash` instead of creating a new `SourceDocument` row.
   - Book/document ingestion retries also resume under the existing `failed` `SourceDocument` matched by `content_hash`; chunk extraction is treated as one transactional batch, so failed batches are rolled back and the full batch is re-attempted on retry.
+  - v1 file-backed ingestion completion is reached when the canonical `sqlite` transaction for the import unit commits successfully and `SourceDocument.import_status` transitions to `complete`.
+  - Derived analytics or projection work, including any future `duckdb` projection, must run outside that file-backed completion boundary and must not block a successful v1 ingestion result.
 
 ### Storage Layers
 - **Raw artifacts**
@@ -139,12 +141,14 @@ must make.
    - PDF/text extract -> book chunk ingestion path
    - puzzle dataset or manual puzzle entry -> puzzle ingestion path
 3. Persist canonical relational records into `sqlite`.
+   - canonical `sqlite` persistence, including the `SourceDocument.import_status` transition to `complete`, is the v1 completion boundary for file-backed ingestion
 4. Allow later enrichment:
    - manual links
    - analysis sessions
    - study line creation
    - annotations
 5. Defer any future analytical projections until the canonical store is stable and query needs justify them.
+   - a missing projection layer does not reopen or invalidate a completed canonical ingestion
 
 ## Edge Case Probe
 - PGN import fails midway through a file -> keep the `SourceDocument`, set `SourceDocument.import_status = 'failed'`, and avoid partial duplicate `Game` rows on retry.

@@ -24,4 +24,4 @@
 | ING-020 | WHEN a user links imported source text to corpus objects after ingestion THE SYSTEM SHALL persist the link as `BookAnchor` and SHALL allow multiple targets per source chunk. | [ ] → #8 |
 | ING-021 | WHEN an external LLM response is attached as freeform commentary THE SYSTEM SHALL persist it as an `Annotation` without mutating imported source records directly. | [ ] → #11 |
 | ING-022 | WHEN an external LLM response contains structured candidate-line exploration THE SYSTEM SHALL allow ingestion as `AnalysisSession` plus `AnalysisNode` records. | [ ] → #13 |
-| ING-023 | WHEN an analytics projection layer such as `duckdb` is absent THE SYSTEM SHALL still consider v1 ingestion complete if canonical `sqlite` writes succeeded. | [ ] → #14 |
+| ING-023 | WHEN a file-backed v1 ingestion workflow commits its canonical `sqlite` import-unit writes and transitions `SourceDocument.import_status` to `complete` THE SYSTEM SHALL consider ingestion successful even if an analytics projection layer such as `duckdb` is absent. | [x] → #14 |

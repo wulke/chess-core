@@ -7,6 +7,7 @@ set -euo pipefail
 # @spec ING-005
 # @spec ING-006
 # @spec ING-007
+# @spec ING-023
 # @spec CRP-047
 # @spec CRP-048
 # @spec CRP-049
@@ -68,6 +69,12 @@ SQL
 
 complete_row="$(sqlite3 -tabs "$DB_PATH" "SELECT import_status, imported_at FROM source_documents WHERE id = 1;")"
 [[ "$complete_row" == $'complete\t2026-06-29 12:00:00' ]]
+
+if sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM duckdb_projection_jobs;" >/dev/null 2>/dev/null
+then
+  echo "expected missing derived analytics table lookup to fail" >&2
+  exit 1
+fi
 
 sqlite3 "$DB_PATH" <<'SQL'
 INSERT INTO source_documents (

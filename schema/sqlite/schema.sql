@@ -8,6 +8,7 @@ PRAGMA foreign_keys = ON;
 -- @spec ING-005
 -- @spec ING-006
 -- @spec ING-007
+-- @spec ING-023
 -- @spec CRP-047
 -- @spec CRP-048
 -- @spec CRP-049
