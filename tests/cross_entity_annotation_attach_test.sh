@@ -316,3 +316,43 @@ then
   echo "expected unsupported annotation_kind insert to fail" >&2
   exit 1
 fi
+
+if sqlite3 "$DB_PATH" 2>/dev/null <<'SQL'
+INSERT INTO annotations (
+  target_type,
+  target_id,
+  author_type,
+  annotation_kind,
+  body
+) VALUES (
+  'study_line',
+  1,
+  'user',
+  'note',
+  'Should be rejected until study lines are implemented.'
+);
+SQL
+then
+  echo "expected unimplemented target_type insert to fail" >&2
+  exit 1
+fi
+
+if sqlite3 "$DB_PATH" 2>/dev/null <<'SQL'
+INSERT INTO annotations (
+  target_type,
+  target_id,
+  author_type,
+  annotation_kind,
+  body
+) VALUES (
+  'game',
+  999,
+  'user',
+  'note',
+  'No such game.'
+);
+SQL
+then
+  echo "expected missing target_id insert to fail" >&2
+  exit 1
+fi
