@@ -2,6 +2,37 @@ PRAGMA foreign_keys = ON;
 
 -- Canonical sqlite schema for the currently implemented chess-core corpus surface.
 
+-- @spec ING-001
+-- @spec ING-002
+-- @spec ING-004
+-- @spec ING-005
+-- @spec ING-006
+-- @spec ING-007
+-- @spec CRP-047
+-- @spec CRP-048
+-- @spec CRP-049
+CREATE TABLE source_documents (
+  id INTEGER PRIMARY KEY,
+  source_type TEXT NOT NULL CHECK (source_type IN ('pgn', 'pdf', 'text-extract', 'puzzle-dataset')),
+  title TEXT NOT NULL CHECK (trim(title) <> ''),
+  path TEXT NOT NULL CHECK (trim(path) <> ''),
+  content_hash TEXT NOT NULL CHECK (trim(content_hash) <> ''),
+  import_status TEXT NOT NULL CHECK (import_status IN ('pending', 'complete', 'failed')),
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  imported_at TEXT,
+  CHECK (
+    (import_status = 'complete' AND imported_at IS NOT NULL)
+    OR (import_status IN ('pending', 'failed') AND imported_at IS NULL)
+  )
+);
+
+CREATE INDEX source_documents_content_hash_idx
+ON source_documents (content_hash);
+
+CREATE UNIQUE INDEX source_documents_active_content_hash_unique
+ON source_documents (content_hash)
+WHERE import_status != 'failed';
+
 -- @spec PZL-002
 -- @spec PZL-003
 -- @spec PZL-004
@@ -15,7 +46,7 @@ PRAGMA foreign_keys = ON;
 -- @spec ING-003
 CREATE TABLE puzzles (
   id INTEGER PRIMARY KEY,
-  source_document_id INTEGER,
+  source_document_id INTEGER REFERENCES source_documents(id) ON DELETE RESTRICT,
   external_puzzle_id TEXT,
   source_provider TEXT NOT NULL CHECK (source_provider IN ('lichess', 'manual', 'import')),
   fen TEXT NOT NULL CHECK (trim(fen) <> ''),

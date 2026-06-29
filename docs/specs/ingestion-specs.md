@@ -2,13 +2,13 @@
 
 | ID | Requirement | Status |
 |---|---|---|
-| ING-001 | WHEN a file-backed raw artifact is registered for ingestion THE SYSTEM SHALL create a `SourceDocument` before domain-record ingestion begins. | [ ] → #3 |
-| ING-002 | WHEN a file-backed raw artifact is registered as a `SourceDocument` THE SYSTEM SHALL store the local file path and file content hash. | [ ] → #3 |
+| ING-001 | WHEN a file-backed raw artifact is registered for ingestion THE SYSTEM SHALL create a `SourceDocument` before domain-record ingestion begins. | [x] → #3 |
+| ING-002 | WHEN a file-backed raw artifact is registered as a `SourceDocument` THE SYSTEM SHALL store the local file path and file content hash. | [x] → #3 |
 | ING-003 | WHEN a manual puzzle is created without a backing file THE SYSTEM SHALL allow ingestion to proceed without creating a `SourceDocument`. | [x] → #6 |
-| ING-004 | WHEN domain-record ingestion begins for a newly registered `SourceDocument` THE SYSTEM SHALL set `import_status` to `pending`. | [ ] → #3 |
-| ING-005 | WHEN ingestion succeeds for a `SourceDocument` THE SYSTEM SHALL set `import_status` to `complete`. | [ ] → #3 |
-| ING-006 | WHEN ingestion fails after `SourceDocument` registration THE SYSTEM SHALL set `import_status` to `failed`. | [ ] → #3 |
-| ING-007 | WHEN `chess-core` ingests file-backed artifacts THE SYSTEM SHALL use a staged-commit model where `SourceDocument` registration is committed before domain-record import units are committed. | [ ] → #3 |
+| ING-004 | WHEN domain-record ingestion begins for a newly registered `SourceDocument` THE SYSTEM SHALL set `import_status` to `pending`. | [x] → #3 |
+| ING-005 | WHEN ingestion succeeds for a `SourceDocument` THE SYSTEM SHALL set `import_status` to `complete`. | [x] → #3 |
+| ING-006 | WHEN ingestion fails after `SourceDocument` registration THE SYSTEM SHALL set `import_status` to `failed`. | [x] → #3 |
+| ING-007 | WHEN `chess-core` ingests file-backed artifacts THE SYSTEM SHALL use a staged-commit model where `SourceDocument` registration is committed before domain-record import units are committed. | [x] → #3 |
 | ING-008 | WHEN PGN ingestion processes a file THE SYSTEM SHALL preserve the original PGN text on each imported `Game`. | [ ] → #4 |
 | ING-009 | WHEN PGN ingestion processes a game THE SYSTEM SHALL normalize individual moves into `MoveRecord` rows. | [ ] → #4 |
 | ING-010 | WHEN PGN ingestion processes a game THE SYSTEM SHALL derive `PositionOccurrence` rows for mainline game positions in v1. | [ ] → #4 |
