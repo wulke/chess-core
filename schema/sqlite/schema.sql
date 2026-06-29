@@ -582,3 +582,106 @@ BEGIN
     THEN RAISE(ABORT, 'move record side must match ply parity')
   END;
 END;
+
+-- @spec CRP-038
+-- @spec CRP-039
+-- @spec CRP-040
+-- @spec CRP-041
+-- @spec CRP-051
+-- @spec ING-021
+-- @spec ING-027
+CREATE TABLE annotations (
+  id INTEGER PRIMARY KEY,
+  target_type TEXT NOT NULL CHECK (
+    target_type IN (
+      'position_occurrence',
+      'study_line',
+      'game',
+      'puzzle',
+      'book_chunk',
+      'analysis_session',
+      'analysis_node',
+      'move_record'
+    )
+  ),
+  target_id INTEGER NOT NULL CHECK (target_id > 0),
+  author_type TEXT NOT NULL CHECK (
+    author_type IN ('user', 'llm', 'engine', 'import')
+  ),
+  annotation_kind TEXT NOT NULL CHECK (
+    annotation_kind IN ('note', 'commentary', 'evaluation', 'label', 'summary', 'warning')
+  ),
+  body TEXT NOT NULL CHECK (trim(body) <> ''),
+  payload_json TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX annotations_target_lookup_idx
+ON annotations (target_type, target_id);
+
+CREATE INDEX annotations_author_kind_idx
+ON annotations (author_type, annotation_kind);
+
+-- @spec CRP-038
+-- @spec ING-021
+-- @spec ING-027
+CREATE TRIGGER annotations_validate_insert_target
+BEFORE INSERT ON annotations
+FOR EACH ROW
+BEGIN
+  SELECT CASE
+    WHEN NEW.target_type = 'position_occurrence'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM position_occurrences
+        WHERE id = NEW.target_id
+      )
+    THEN RAISE(ABORT, 'annotation target does not exist')
+    WHEN NEW.target_type = 'game'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM games
+        WHERE id = NEW.target_id
+      )
+    THEN RAISE(ABORT, 'annotation target does not exist')
+    WHEN NEW.target_type = 'puzzle'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM puzzles
+        WHERE id = NEW.target_id
+      )
+    THEN RAISE(ABORT, 'annotation target does not exist')
+    WHEN NEW.target_type = 'book_chunk'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM book_chunks
+        WHERE id = NEW.target_id
+      )
+    THEN RAISE(ABORT, 'annotation target does not exist')
+    WHEN NEW.target_type = 'move_record'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM move_records
+        WHERE id = NEW.target_id
+      )
+    THEN RAISE(ABORT, 'annotation target does not exist')
+    WHEN NEW.target_type IN ('study_line', 'analysis_session', 'analysis_node')
+    THEN RAISE(ABORT, 'annotation target type is not yet annotatable in v1 schema')
+  END;
+END;
+
+-- @spec CRP-051
+CREATE TRIGGER annotations_prevent_update
+BEFORE UPDATE ON annotations
+FOR EACH ROW
+BEGIN
+  SELECT RAISE(ABORT, 'annotations are append-only');
+END;
+
+-- @spec CRP-051
+CREATE TRIGGER annotations_prevent_delete
+BEFORE DELETE ON annotations
+FOR EACH ROW
+BEGIN
+  SELECT RAISE(ABORT, 'annotations are append-only');
+END;

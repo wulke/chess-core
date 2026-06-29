@@ -135,6 +135,8 @@ This LLD defines the canonical entity boundaries for the `chess-core` study corp
   - Notes:
     - `uci` is the canonical move encoding.
     - `from_square`, `to_square`, and `promotion_piece` are denormalized from `uci` for query convenience.
+    - `comment_text` preserves PGN-native inline move commentary as imported provenance on the move row itself.
+    - v1 annotation workflows must not rewrite, clear, or auto-copy `comment_text` into `Annotation`; attaching commentary to a `move_record` is a separate enrichment action.
 
 #### Analysis and reusable study artifacts
 - **AnalysisSession**
@@ -228,6 +230,24 @@ This LLD defines the canonical entity boundaries for the `chess-core` study corp
     - `body`
     - `payload_json` nullable
     - `created_at`
+  - Notes:
+    - `Annotation` is append-only enrichment metadata; correcting, superseding, or revising meaning creates a new row instead of mutating an existing one in place.
+    - `target_id` resolves by `target_type` as follows:
+
+      | `target_type` | `target_id` resolves to |
+      |---|---|
+      | `position_occurrence` | `PositionOccurrence.id` |
+      | `study_line` | `StudyLine.id` |
+      | `game` | `Game.id` |
+      | `puzzle` | `Puzzle.id` |
+      | `book_chunk` | `BookChunk.id` |
+      | `analysis_session` | `AnalysisSession.id` |
+      | `analysis_node` | `AnalysisNode.id` |
+      | `move_record` | `MoveRecord.id` |
+    - `move_record` is included for `Annotation` because a reviewer, engine, or LLM may need to attach meaning to one normalized move, even though book prose does not anchor to move rows in v1.
+    - `payload_json` may store structured fields such as engine scores, parser output, or LLM metadata alongside the human-readable `body`.
+    - v1 does not add first-class annotation provenance columns beyond `author_type`; when an LLM workflow needs model/session metadata it should store that data inside `payload_json`.
+    - v1 does not enforce a schema-level deduplication key for `Annotation` because intentionally repeated notes may coexist on the same target; retry-safe deduplication is the responsibility of the calling workflow when idempotency matters.
 
 ### Relationship Summary
 - one `SourceDocument` may produce many `Game` records
@@ -259,8 +279,9 @@ This LLD defines the canonical entity boundaries for the `chess-core` study corp
 ## Edge Case Probe
 - Same FEN appears in many contexts -> store separate `PositionOccurrence` rows and use `position_hash` only for equality/indexing, not identity.
 - Puzzle sources need solution lines but are not games -> store solution moves on `Puzzle.solution_line_uci` in v1 and use `AnalysisSession`/`AnalysisNode` for review activity.
-- PGN comments exist on individual moves -> preserve them on `MoveRecord.comment_text` and allow later promotion into `Annotation`.
+- PGN comments exist on individual moves -> preserve them on `MoveRecord.comment_text` as imported provenance in v1, and any later annotation attach workflow must not rewrite, clear, or auto-create duplicate `Annotation` rows from that imported comment text.
 - One book chunk refers to several positions -> create multiple `BookAnchor` rows from one `BookChunk`.
 - One analysis session branches heavily -> preserve tree shape through `parent_node_id` and `branch_order`; do not flatten into one line string.
 - A line becomes durable knowledge after analysis -> create a `StudyLine` instead of overloading `AnalysisNode`.
 - An LLM or engine produces structured output -> store human-readable text in `body` and machine-friendly fields in `payload_json`.
+- An annotation attach workflow is retried after a partial upstream failure -> accept append-only duplicates at the schema layer and require the caller to supply any idempotency policy above the canonical store.

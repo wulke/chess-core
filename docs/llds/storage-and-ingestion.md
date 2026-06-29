@@ -130,6 +130,9 @@ must make.
   - Guarantees:
     - LLM output does not mutate imported source records directly
     - structured payloads may be preserved alongside human-readable text
+    - freeform commentary persists as append-only `Annotation` rows rather than updates to prior annotations or imported move/source text
+    - retry-safe deduplication is caller-managed in v1 when the same LLM response may be submitted more than once
+    - model/session metadata may be stored in `payload_json`, but no first-class LLM provenance columns are required in v1
 
 - **LLM analysis session**
   - Input:
