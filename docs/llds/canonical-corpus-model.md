@@ -183,6 +183,7 @@ This LLD defines the canonical entity boundaries for the `chess-core` study corp
     - `ply_depth` is the count of plies from the root `PositionOccurrence`; first-ply branches from the root use `ply_depth = 1`, and each child node increments depth by exactly one from its parent.
     - `root_position_occurrence_id` is denormalized from the owning session for fast join-free lookup from a node back to the root study position.
     - `root_position_occurrence_id` on every node must equal the owning `AnalysisSession.root_position_occurrence_id`; callers must not create mixed-root trees inside one session.
+    - v1 structured multi-line imports use shared-prefix tree semantics: when two imported lines share the same move sequence prefix, they must reuse the same ancestor `AnalysisNode` rows and branch only at the first divergent move.
 
 - **StudyLine**
   - Purpose: Represent a reusable line, plan, refutation, or pattern worth preserving outside a single analysis session.
@@ -253,6 +254,7 @@ This LLD defines the canonical entity boundaries for the `chess-core` study corp
       | `analysis_node` | `AnalysisNode.id` |
       | `move_record` | `MoveRecord.id` |
     - `move_record` is included for `Annotation` because a reviewer, engine, or LLM may need to attach meaning to one normalized move, even though book prose does not anchor to move rows in v1.
+    - `analysis_session` and `analysis_node` are active annotation targets in v1 for workflows such as structured LLM line import that preserve accompanying prose alongside first-class analysis-tree data.
     - `payload_json` may store structured fields such as engine scores, parser output, or LLM metadata alongside the human-readable `body`.
     - v1 does not add first-class annotation provenance columns beyond `author_type`; when an LLM workflow needs model/session metadata it should store that data inside `payload_json`.
     - v1 does not enforce a schema-level deduplication key for `Annotation` because intentionally repeated notes may coexist on the same target; retry-safe deduplication is the responsibility of the calling workflow when idempotency matters.

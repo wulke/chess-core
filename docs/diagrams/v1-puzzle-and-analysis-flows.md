@@ -63,7 +63,7 @@ flowchart LR
         Analyze --> SaveSession[Persist AnalysisSession and AnalysisNode tree atomically]:::output
         Structured --> SaveSession
         SaveSession --> OrderSemantics[Assign session-local node_index, sibling branch_order, and depth from root]:::output
-        OrderSemantics --> OptAnn[Optionally persist Annotation]:::output
+        OrderSemantics --> OptAnn[Optionally persist Annotation on the created AnalysisSession]:::output
     end
 
     Root --> Review
@@ -75,9 +75,15 @@ flowchart LR
   direct `puzzle_id` on `AnalysisSession`.
 - Analysis-tree persistence is atomic per capture submission; failed node
   validation must not leave behind a partial session tree.
+- Structured LLM sessions derive `session_kind` from the root
+  `PositionOccurrence.source_kind`: `game -> postgame`, `puzzle ->
+  puzzle-review`, `book -> book-review`, `manual -> manual`.
 - `AnalysisNode.node_index` is a caller-supplied stable session-local
   identifier, `branch_order` is sibling-local display order, and `ply_depth`
   counts plies from the root `PositionOccurrence`.
+- Structured multi-line imports use shared-prefix tree semantics, so common
+  opening sequences reuse the same ancestor `AnalysisNode` rows before
+  branching at the first divergent move.
 - File-backed puzzle datasets commit valid rows independently and reuse the same
   failed `SourceDocument` on retry, skipping already committed puzzles using
   `external_puzzle_id` when present or (`source_provider`, `fen`) otherwise.
