@@ -5,9 +5,11 @@
 ## Integrate
 
 ```sh
-git submodule add <url> vendor/chess-core
+git submodule add https://github.com/wulke/chess-core.git vendor/chess-core
 sqlite3 mydb.sqlite < vendor/chess-core/schema/sqlite/schema.sql
 ```
+
+Replace the repository URL if you vendor `chess-core` from a fork, and pin the submodule to the tag or commit your application depends on.
 
 ## Start Reading
 
