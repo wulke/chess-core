@@ -15,6 +15,7 @@ and the EARS specs under [docs/specs](/Users/trevorwulke/workspace/chess-core/do
 ## Notation
 - `Mermaid flowchart` for system structure and lifecycle overviews
 - `Mermaid sequenceDiagram` for ordered workflow and access-pattern detail
+- `Mermaid erDiagram` for concrete schema entity and foreign-key reference views
 
 ## Maintenance
 When HLD, LLD, or EARS changes alter a depicted flow, actor, boundary, or entity
@@ -37,3 +38,6 @@ companions, not normative sources.
 5. [v1-puzzle-and-analysis-flows.md](/Users/trevorwulke/workspace/chess-core/docs/diagrams/v1-puzzle-and-analysis-flows.md)
    - puzzle import/manual entry, root puzzle context, LLM annotation attach, and LLM analysis session flows
    - backed by storage/ingestion LLD, corpus model LLD, `ING-021` through `ING-023`, and `PZL-001` through `PZL-017`
+6. [v1-schema-fk-erd.md](/Users/trevorwulke/workspace/chess-core/docs/diagrams/v1-schema-fk-erd.md)
+   - concrete v1 schema entity-relationship view for the 10 implemented corpus tables and their declared foreign-key links
+   - backed by corpus model LLD, corpus model specs, and the implemented `sqlite` schema
