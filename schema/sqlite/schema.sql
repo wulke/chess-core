@@ -643,7 +643,7 @@ BEGIN
             OR (source_kind = 'manual' AND NEW.session_kind = 'manual')
           )
       )
-    THEN RAISE(ROLLBACK, 'llm analysis session_kind must match the root position source_kind')
+    THEN RAISE(ABORT, 'llm analysis session_kind must match the root position source_kind')
   END;
 END;
 
@@ -669,7 +669,7 @@ BEGIN
             OR (source_kind = 'manual' AND NEW.session_kind = 'manual')
           )
       )
-    THEN RAISE(ROLLBACK, 'llm analysis session_kind must match the root position source_kind')
+    THEN RAISE(ABORT, 'llm analysis session_kind must match the root position source_kind')
     WHEN NEW.nonempty_guard_session_id != OLD.nonempty_guard_session_id
       AND NEW.nonempty_guard_session_id != NEW.id
     THEN RAISE(ROLLBACK, 'analysis session nonempty guard must match the session id')

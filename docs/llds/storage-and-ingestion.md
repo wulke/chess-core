@@ -145,6 +145,7 @@ must make.
   - Guarantees:
     - LLM-authored line exploration is stored as a first-class analysis tree when it represents structured candidate-line output
     - the workflow derives `AnalysisSession.session_kind` from the chosen root `PositionOccurrence.source_kind` as `game -> postgame`, `puzzle -> puzzle-review`, `book -> book-review`, and `manual -> manual`
+    - `opening-study` remains a valid general `AnalysisSession.session_kind` enum in v1, but it is not used by this LLM structured-import workflow
     - freeform commentary may still be attached only as `Annotation` when no line structure is present
     - when structured line output also includes accompanying prose, that prose is attached as append-only `Annotation` on the created `AnalysisSession` rather than on the root `PositionOccurrence`
     - LLM-generated sessions do not mutate imported source records directly
