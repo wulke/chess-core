@@ -27,7 +27,7 @@
 | CRP-023 | WHEN a review episode is captured THE SYSTEM SHALL represent it as an `AnalysisSession` rooted at an existing `PositionOccurrence`. | [x] → #10 |
 | CRP-024 | WHEN an `AnalysisSession` is stored THE SYSTEM SHALL preserve `author_type` and `session_kind` from the approved enum set (`user`, `llm`, `engine`, `import`) and (`postgame`, `book-review`, `opening-study`, `puzzle-review`, `manual`) respectively. | [x] → #10 |
 | CRP-025 | WHEN an `AnalysisSession` is stored THE SYSTEM SHALL preserve `title`, `started_at`, and nullable `ended_at`, where `ended_at` remains null for an open session. | [x] → #10 |
-| CRP-025a | WHEN an `AnalysisSession` capture is submitted without any candidate-line nodes THE SYSTEM SHALL reject the submission rather than persist an empty session. | [ ] → #10 |
+| CRP-025a | WHEN an `AnalysisSession` capture is submitted without any candidate-line nodes THE SYSTEM SHALL reject the submission rather than persist an empty session. | [x] → #13 |
 | CRP-026 | WHEN an `AnalysisSession` contains candidate-line exploration THE SYSTEM SHALL store explored moves as `AnalysisNode` records connected by parent-child relationships. | [x] → #10 |
 | CRP-026a | WHEN one review-capture submission persists an `AnalysisSession` and its `AnalysisNode` tree THE SYSTEM SHALL commit the full tree atomically or roll the full capture back. | [x] → #10 |
 | CRP-026b | WHEN an `AnalysisNode` submission references a `parent_node_id` that belongs to a different `AnalysisSession` THE SYSTEM SHALL reject the submission rather than create a cross-session tree edge. | [x] → #10 |

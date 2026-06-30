@@ -586,6 +586,19 @@ END;
 -- @spec CRP-023
 -- @spec CRP-024
 -- @spec CRP-025
+-- @spec CRP-025a
+-- @spec ING-022a
+-- @spec ING-022d
+CREATE TABLE analysis_session_nonempty_guards (
+  session_id INTEGER PRIMARY KEY REFERENCES analysis_sessions(id) ON DELETE CASCADE
+);
+
+-- @spec CRP-023
+-- @spec CRP-024
+-- @spec CRP-025
+-- @spec CRP-025a
+-- @spec ING-022a
+-- @spec ING-022d
 -- @spec PZL-007
 CREATE TABLE analysis_sessions (
   id INTEGER PRIMARY KEY,
@@ -599,11 +612,80 @@ CREATE TABLE analysis_sessions (
   title TEXT NOT NULL CHECK (trim(title) <> ''),
   started_at TEXT NOT NULL CHECK (trim(started_at) <> ''),
   ended_at TEXT CHECK (ended_at IS NULL OR trim(ended_at) <> ''),
+  nonempty_guard_session_id INTEGER NOT NULL DEFAULT 0
+    REFERENCES analysis_session_nonempty_guards(session_id) DEFERRABLE INITIALLY DEFERRED,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX analysis_sessions_root_position_idx
 ON analysis_sessions (root_position_occurrence_id, session_kind);
+
+-- @spec CRP-024
+-- @spec CRP-025a
+-- @spec ING-022a
+-- @spec ING-022d
+-- SQLite cannot share one trigger body across INSERT and UPDATE events, so any
+-- validation change here must be mirrored in analysis_sessions_validate_update_kind.
+CREATE TRIGGER analysis_sessions_validate_insert_kind
+BEFORE INSERT ON analysis_sessions
+FOR EACH ROW
+BEGIN
+  SELECT CASE
+    WHEN NEW.author_type = 'llm'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM position_occurrences
+        WHERE id = NEW.root_position_occurrence_id
+          AND (
+            (source_kind = 'game' AND NEW.session_kind = 'postgame')
+            OR (source_kind = 'puzzle' AND NEW.session_kind = 'puzzle-review')
+            OR (source_kind = 'book' AND NEW.session_kind = 'book-review')
+            OR (source_kind = 'manual' AND NEW.session_kind = 'manual')
+          )
+      )
+    THEN RAISE(ROLLBACK, 'llm analysis session_kind must match the root position source_kind')
+  END;
+END;
+
+-- @spec CRP-024
+-- @spec CRP-025a
+-- @spec ING-022a
+-- @spec ING-022d
+-- Keep this logic aligned with analysis_sessions_validate_insert_kind.
+CREATE TRIGGER analysis_sessions_validate_update_kind
+BEFORE UPDATE ON analysis_sessions
+FOR EACH ROW
+BEGIN
+  SELECT CASE
+    WHEN NEW.author_type = 'llm'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM position_occurrences
+        WHERE id = NEW.root_position_occurrence_id
+          AND (
+            (source_kind = 'game' AND NEW.session_kind = 'postgame')
+            OR (source_kind = 'puzzle' AND NEW.session_kind = 'puzzle-review')
+            OR (source_kind = 'book' AND NEW.session_kind = 'book-review')
+            OR (source_kind = 'manual' AND NEW.session_kind = 'manual')
+          )
+      )
+    THEN RAISE(ROLLBACK, 'llm analysis session_kind must match the root position source_kind')
+    WHEN NEW.nonempty_guard_session_id != OLD.nonempty_guard_session_id
+      AND NEW.nonempty_guard_session_id != NEW.id
+    THEN RAISE(ROLLBACK, 'analysis session nonempty guard must match the session id')
+  END;
+END;
+
+-- @spec CRP-025a
+-- @spec ING-022a
+CREATE TRIGGER analysis_sessions_set_nonempty_guard_after_insert
+AFTER INSERT ON analysis_sessions
+FOR EACH ROW
+BEGIN
+  UPDATE analysis_sessions
+  SET nonempty_guard_session_id = NEW.id
+  WHERE id = NEW.id;
+END;
 
 -- @spec CRP-026
 -- @spec CRP-026a
@@ -613,6 +695,8 @@ ON analysis_sessions (root_position_occurrence_id, session_kind);
 -- @spec CRP-029
 -- @spec CRP-029a
 -- @spec CRP-030
+-- @spec ING-022
+-- @spec ING-022a
 CREATE TABLE analysis_nodes (
   id INTEGER PRIMARY KEY,
   analysis_session_id INTEGER NOT NULL REFERENCES analysis_sessions(id) ON DELETE RESTRICT,
@@ -769,12 +853,60 @@ BEGIN
   END;
 END;
 
+-- @spec CRP-025a
+-- @spec ING-022
+-- @spec ING-022a
+CREATE TRIGGER analysis_nodes_mark_session_nonempty_after_insert
+AFTER INSERT ON analysis_nodes
+FOR EACH ROW
+BEGIN
+  INSERT OR IGNORE INTO analysis_session_nonempty_guards (session_id)
+  VALUES (NEW.analysis_session_id);
+END;
+
+-- @spec CRP-025a
+-- @spec ING-022
+-- @spec ING-022a
+CREATE TRIGGER analysis_nodes_refresh_session_nonempty_after_update
+AFTER UPDATE ON analysis_nodes
+FOR EACH ROW
+BEGIN
+  INSERT OR IGNORE INTO analysis_session_nonempty_guards (session_id)
+  VALUES (NEW.analysis_session_id);
+
+  DELETE FROM analysis_session_nonempty_guards
+  WHERE session_id = OLD.analysis_session_id
+    AND NOT EXISTS (
+      SELECT 1
+      FROM analysis_nodes
+      WHERE analysis_session_id = OLD.analysis_session_id
+    );
+END;
+
+-- @spec CRP-025a
+-- @spec ING-022
+-- @spec ING-022a
+CREATE TRIGGER analysis_nodes_refresh_session_nonempty_after_delete
+AFTER DELETE ON analysis_nodes
+FOR EACH ROW
+BEGIN
+  DELETE FROM analysis_session_nonempty_guards
+  WHERE session_id = OLD.analysis_session_id
+    AND NOT EXISTS (
+      SELECT 1
+      FROM analysis_nodes
+      WHERE analysis_session_id = OLD.analysis_session_id
+    );
+END;
+
 -- @spec CRP-038
 -- @spec CRP-039
 -- @spec CRP-040
 -- @spec CRP-041
 -- @spec CRP-051
 -- @spec ING-021
+-- @spec ING-022b
+-- @spec ING-022c
 -- @spec ING-027
 CREATE TABLE annotations (
   id INTEGER PRIMARY KEY,
@@ -810,6 +942,7 @@ ON annotations (author_type, annotation_kind);
 
 -- @spec CRP-038
 -- @spec ING-021
+-- @spec ING-022b
 -- @spec ING-027
 CREATE TRIGGER annotations_validate_insert_target
 BEFORE INSERT ON annotations
@@ -844,6 +977,20 @@ BEGIN
         WHERE id = NEW.target_id
       )
     THEN RAISE(ABORT, 'annotation target does not exist')
+    WHEN NEW.target_type = 'analysis_session'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM analysis_sessions
+        WHERE id = NEW.target_id
+      )
+    THEN RAISE(ABORT, 'annotation target does not exist')
+    WHEN NEW.target_type = 'analysis_node'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM analysis_nodes
+        WHERE id = NEW.target_id
+      )
+    THEN RAISE(ABORT, 'annotation target does not exist')
     WHEN NEW.target_type = 'move_record'
       AND NOT EXISTS (
         SELECT 1
@@ -851,7 +998,7 @@ BEGIN
         WHERE id = NEW.target_id
       )
     THEN RAISE(ABORT, 'annotation target does not exist')
-    WHEN NEW.target_type IN ('study_line', 'analysis_session', 'analysis_node')
+    WHEN NEW.target_type = 'study_line'
     THEN RAISE(ABORT, 'annotation target type is not yet annotatable in v1 schema')
   END;
 END;

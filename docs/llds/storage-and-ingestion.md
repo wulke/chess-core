@@ -144,12 +144,15 @@ must make.
     - optionally `Annotation`
   - Guarantees:
     - LLM-authored line exploration is stored as a first-class analysis tree when it represents structured candidate-line output
+    - the workflow derives `AnalysisSession.session_kind` from the chosen root `PositionOccurrence.source_kind` as `game -> postgame`, `puzzle -> puzzle-review`, `book -> book-review`, and `manual -> manual`
     - freeform commentary may still be attached only as `Annotation` when no line structure is present
+    - when structured line output also includes accompanying prose, that prose is attached as append-only `Annotation` on the created `AnalysisSession` rather than on the root `PositionOccurrence`
     - LLM-generated sessions do not mutate imported source records directly
     - one review-capture submission is atomic for `AnalysisSession` plus `AnalysisNode` persistence; if any node fails validation, the workflow must not leave behind a partial tree
-    - zero-node review captures are invalid in v1; the workflow must reject them instead of persisting an empty `AnalysisSession`
+    - zero-node review captures are invalid in v1; the workflow must reject them before persisting any `AnalysisSession` or `AnalysisNode` rows
     - every persisted node reuses the chosen root `PositionOccurrence` through `root_position_occurrence_id` so later lookup back to the studied position does not require joining through the session row first
     - v1 review capture accepts caller-supplied `node_index` values so deterministic node identity can survive retry or replay of the same logical tree
+    - v1 structured multi-line imports use shared-prefix tree semantics, so lines that share an opening sequence reuse the same ancestor `AnalysisNode` rows and branch only at the point of divergence
 
 ## Logic Flow
 
